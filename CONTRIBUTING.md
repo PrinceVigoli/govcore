@@ -68,7 +68,6 @@ Run, in order:
 
 ```bash
 pnpm run lint
-pnpm run format:check
 pnpm run typecheck
 npx tsx tests/engines/rules.test.ts
 npx tsx tests/engines/forms.test.ts
@@ -77,7 +76,7 @@ npx tsx tests/engines/documents.test.ts
 pnpm run build
 ```
 
-All of these run in CI (see `.github/workflows/ci.yml`); running them first
+These checks run in CI (see `.github/workflows/ci.yml`); running them first
 avoids a slow feedback loop.
 
 ## Database changes
