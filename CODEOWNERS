@@ -1,0 +1,37 @@
+# CODEOWNERS
+#
+# TODO(maintainers): replace the @placeholder-* handles below with real
+# GitHub usernames or teams before this is enforced as a required review
+# rule in branch protection. Until then this file documents *intended*
+# ownership boundaries even though GitHub won't request reviews from
+# placeholders.
+#
+# Order matters: later patterns override earlier ones.
+
+# Default owners for anything not covered below
+*                                   @placeholder-maintainers
+
+# Shared libraries
+/lib/db/                           @placeholder-db-owners
+/lib/api-spec/                     @placeholder-api-owners
+/lib/api-zod/                      @placeholder-api-owners
+/lib/api-client-react/             @placeholder-frontend-owners
+
+# API server
+/artifacts/api-server/             @placeholder-api-owners
+/artifacts/api-server/src/routes/auth.ts        @placeholder-security-owners
+/artifacts/api-server/src/lib/                  @placeholder-api-owners
+
+# Frontend
+/artifacts/govcore/                @placeholder-frontend-owners
+
+# Design sandbox (lower bar — not deployed with production data)
+/artifacts/mockup-sandbox/         @placeholder-frontend-owners
+
+# Tests
+/tests/                            @placeholder-maintainers
+
+# Engineering standards / CI / security-sensitive files
+/.github/                          @placeholder-maintainers
+/SECURITY.md                       @placeholder-security-owners
+/pnpm-workspace.yaml               @placeholder-security-owners

@@ -1,0 +1,5234 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: GovCore Platform API — Identity Engine
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: tenants
+    description: Tenant management
+  - name: departments
+    description: Department management
+  - name: users
+    description: User management
+  - name: roles
+    description: Role management
+  - name: permissions
+    description: Permission management
+  - name: audit-logs
+    description: Audit log operations
+  - name: identity-stats
+    description: Identity engine dashboard statistics
+  - name: workflow-definitions
+    description: Workflow definition management (metadata-driven approval processes)
+  - name: workflow-versions
+    description: Versioned graphs of states and transitions for a workflow definition
+  - name: workflow-instances
+    description: Running instances of a workflow attached to a business record
+  - name: workflow-tasks
+    description: Pending approval/rejection work items assigned to a user or role
+  - name: workflow-history
+    description: Immutable audit trail of workflow state transitions
+  - name: forms
+    description: Form definitions (Book 07 Forms Engine)
+  - name: form-versions
+    description: Versioned section/field/validation trees for a form
+  - name: form-submissions
+    description: Citizen or staff submissions of a form version, including offline sync
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ────────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with username/email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithRoles"
+        "401":
+          description: Not authenticated
+
+  # ─── TENANTS ─────────────────────────────────────────────────────────────────
+  /tenants:
+    get:
+      operationId: listTenants
+      tags: [tenants]
+      summary: List all tenants
+      responses:
+        "200":
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tenant"
+    post:
+      operationId: createTenant
+      tags: [tenants]
+      summary: Create a new tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantInput"
+      responses:
+        "201":
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+
+  /tenants/{id}:
+    get:
+      operationId: getTenant
+      tags: [tenants]
+      summary: Get a tenant by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateTenant
+      tags: [tenants]
+      summary: Update a tenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TenantUpdate"
+      responses:
+        "200":
+          description: Updated tenant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tenant"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteTenant
+      tags: [tenants]
+      summary: Delete a tenant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # ─── DEPARTMENTS ─────────────────────────────────────────────────────────────
+  /departments:
+    get:
+      operationId: listDepartments
+      tags: [departments]
+      summary: List all departments
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Department"
+    post:
+      operationId: createDepartment
+      tags: [departments]
+      summary: Create a department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentInput"
+      responses:
+        "201":
+          description: Department created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+
+  /departments/{id}:
+    get:
+      operationId: getDepartment
+      tags: [departments]
+      summary: Get a department by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDepartment
+      tags: [departments]
+      summary: Update a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentUpdate"
+      responses:
+        "200":
+          description: Updated department
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteDepartment
+      tags: [departments]
+      summary: Delete a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  # ─── USERS ───────────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: departmentId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithRoles"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /users/{id}/status:
+    patch:
+      operationId: updateUserStatus
+      tags: [users]
+      summary: Update user status (active/inactive/suspended)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserStatusUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+
+  /users/{id}/roles:
+    get:
+      operationId: getUserRoles
+      tags: [users]
+      summary: List roles assigned to a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+    post:
+      operationId: assignUserRole
+      tags: [users]
+      summary: Assign a role to a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleAssignment"
+      responses:
+        "204":
+          description: Role assigned
+
+  /users/{id}/roles/{roleId}:
+    delete:
+      operationId: removeUserRole
+      tags: [users]
+      summary: Remove a role from a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Role removed
+        "404":
+          description: Not found
+
+  # ─── ROLES ───────────────────────────────────────────────────────────────────
+  /roles:
+    get:
+      operationId: listRoles
+      tags: [roles]
+      summary: List all roles
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+    post:
+      operationId: createRole
+      tags: [roles]
+      summary: Create a role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleInput"
+      responses:
+        "201":
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+
+  /roles/{id}:
+    get:
+      operationId: getRole
+      tags: [roles]
+      summary: Get a role by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Role with permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoleWithPermissions"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateRole
+      tags: [roles]
+      summary: Update a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdate"
+      responses:
+        "200":
+          description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteRole
+      tags: [roles]
+      summary: Delete a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /roles/{id}/permissions:
+    get:
+      operationId: getRolePermissions
+      tags: [roles]
+      summary: List permissions for a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Role permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Permission"
+    post:
+      operationId: assignRolePermission
+      tags: [roles]
+      summary: Assign a permission to a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PermissionAssignment"
+      responses:
+        "204":
+          description: Permission assigned
+
+  /roles/{id}/permissions/{permissionId}:
+    delete:
+      operationId: removeRolePermission
+      tags: [roles]
+      summary: Remove a permission from a role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: permissionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Permission removed
+        "404":
+          description: Not found
+
+  # ─── PERMISSIONS ─────────────────────────────────────────────────────────────
+  /permissions:
+    get:
+      operationId: listPermissions
+      tags: [permissions]
+      summary: List all available permissions
+      responses:
+        "200":
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Permission"
+
+  # ─── AUDIT LOGS ──────────────────────────────────────────────────────────────
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit-logs]
+      summary: List audit logs
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: resource
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  # ─── IDENTITY STATS (wow endpoints) ──────────────────────────────────────────
+  /identity/stats:
+    get:
+      operationId: getIdentityStats
+      tags: [identity-stats]
+      summary: Identity engine dashboard statistics
+      responses:
+        "200":
+          description: Identity statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdentityStats"
+
+  /identity/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [identity-stats]
+      summary: Recent activity feed from audit logs
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  # ─── WORKFLOW DEFINITIONS ───────────────────────────────────────────────────
+  /workflow-definitions:
+    get:
+      operationId: listWorkflowDefinitions
+      tags: [workflow-definitions]
+      summary: List workflow definitions
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workflow definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowDefinition"
+    post:
+      operationId: createWorkflowDefinition
+      tags: [workflow-definitions]
+      summary: Create a workflow definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDefinitionInput"
+      responses:
+        "201":
+          description: Workflow definition created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDefinition"
+
+  /workflow-definitions/{id}:
+    get:
+      operationId: getWorkflowDefinition
+      tags: [workflow-definitions]
+      summary: Get a workflow definition by ID, including its versions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDefinitionDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateWorkflowDefinition
+      tags: [workflow-definitions]
+      summary: Update a workflow definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowDefinitionUpdate"
+      responses:
+        "200":
+          description: Updated workflow definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowDefinition"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteWorkflowDefinition
+      tags: [workflow-definitions]
+      summary: Delete a workflow definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /workflow-definitions/{id}/versions:
+    post:
+      operationId: createWorkflowVersion
+      tags: [workflow-versions]
+      summary: Create a new draft version (states + transitions graph) for a workflow definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowVersionInput"
+      responses:
+        "201":
+          description: Draft version created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowVersionDetail"
+
+  # ─── WORKFLOW VERSIONS ───────────────────────────────────────────────────────
+  /workflow-versions/{id}:
+    get:
+      operationId: getWorkflowVersion
+      tags: [workflow-versions]
+      summary: Get a workflow version, including its full states + transitions graph
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow version detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowVersionDetail"
+        "404":
+          description: Not found
+
+  /workflow-versions/{id}/publish:
+    post:
+      operationId: publishWorkflowVersion
+      tags: [workflow-versions]
+      summary: Publish a draft version so new instances can be started from it
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Published version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowVersion"
+        "404":
+          description: Not found
+
+  # ─── WORKFLOW INSTANCES ──────────────────────────────────────────────────────
+  /workflow-instances:
+    get:
+      operationId: listWorkflowInstances
+      tags: [workflow-instances]
+      summary: List workflow instances
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: workflowDefinitionId
+          in: query
+          schema:
+            type: integer
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workflow instances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowInstance"
+    post:
+      operationId: startWorkflowInstance
+      tags: [workflow-instances]
+      summary: Start a new workflow instance from the latest published version of a definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowInstanceInput"
+      responses:
+        "201":
+          description: Workflow instance started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowInstanceDetail"
+
+  /workflow-instances/{id}:
+    get:
+      operationId: getWorkflowInstance
+      tags: [workflow-instances]
+      summary: Get a workflow instance, including its current state, tasks, and history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow instance detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowInstanceDetail"
+        "404":
+          description: Not found
+
+  # ─── WORKFLOW TASKS ──────────────────────────────────────────────────────────
+  /workflow-tasks:
+    get:
+      operationId: listWorkflowTasks
+      tags: [workflow-tasks]
+      summary: List workflow tasks (e.g. "my tasks" inbox)
+      parameters:
+        - name: assigneeUserId
+          in: query
+          schema:
+            type: integer
+        - name: workflowInstanceId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workflow tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowTask"
+
+  /workflow-tasks/{id}/approve:
+    post:
+      operationId: approveWorkflowTask
+      tags: [workflow-tasks]
+      summary: Approve a pending task, advancing the instance along the matching transition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowTaskActionInput"
+      responses:
+        "200":
+          description: Instance advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowInstanceDetail"
+        "400":
+          description: No matching transition, or task not pending
+        "404":
+          description: Not found
+
+  /workflow-tasks/{id}/reject:
+    post:
+      operationId: rejectWorkflowTask
+      tags: [workflow-tasks]
+      summary: Reject a pending task, advancing the instance along the matching transition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowTaskActionInput"
+      responses:
+        "200":
+          description: Instance advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowInstanceDetail"
+        "400":
+          description: No matching transition, or task not pending
+        "404":
+          description: Not found
+
+  # ─── WORKFLOW HISTORY ────────────────────────────────────────────────────────
+  /workflow-history/{instanceId}:
+    get:
+      operationId: listWorkflowHistory
+      tags: [workflow-history]
+      summary: Get the immutable transition history for a workflow instance
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow history entries, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkflowHistoryEntry"
+
+  # ─── RULES (Book 06) ──────────────────────────────────────────────────────────
+  /rules:
+    get:
+      operationId: listRules
+      tags: [rules]
+      summary: List rules
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: ruleType
+          in: query
+          schema:
+            type: string
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Rule"
+    post:
+      operationId: createRule
+      tags: [rules]
+      summary: Create a rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "201":
+          description: Rule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+
+  /rules/evaluate:
+    post:
+      operationId: evaluateRules
+      tags: [rules]
+      summary: Evaluate all active rules matching a tenant/module/resourceType against a context object
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleEvaluationInput"
+      responses:
+        "200":
+          description: Evaluation decisions and any per-rule failures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleEvaluationResult"
+
+  /rules/{id}:
+    get:
+      operationId: getRule
+      tags: [rules]
+      summary: Get a rule by ID, including its versions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateRule
+      tags: [rules]
+      summary: Update a rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleUpdate"
+      responses:
+        "200":
+          description: Updated rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteRule
+      tags: [rules]
+      summary: Delete a rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /rules/{id}/versions:
+    post:
+      operationId: createRuleVersion
+      tags: [rule-versions]
+      summary: Create a new draft version (condition-group tree + actions) for a rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleVersionInput"
+      responses:
+        "201":
+          description: Draft version created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleVersionDetail"
+
+  # ─── RULE VERSIONS ────────────────────────────────────────────────────────────
+  /rule-versions/{id}:
+    get:
+      operationId: getRuleVersion
+      tags: [rule-versions]
+      summary: Get a rule version, including its full condition-group tree and actions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rule version detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleVersionDetail"
+        "404":
+          description: Not found
+
+  /rule-versions/{id}/publish:
+    post:
+      operationId: publishRuleVersion
+      tags: [rule-versions]
+      summary: Publish a draft/testing rule version, making it the single active version for its rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Published (activated) version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleVersion"
+        "404":
+          description: Not found
+
+  # ─── RULE HISTORY ─────────────────────────────────────────────────────────────
+  /rule-history/{ruleId}:
+    get:
+      operationId: listRuleHistory
+      tags: [rule-history]
+      summary: Get the immutable event history (published/evaluated/failed/expired/archived) for a rule
+      parameters:
+        - name: ruleId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rule history entries, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RuleHistoryEntry"
+
+
+  # ─── FORMS (Book 07) ──────────────────────────────────────────────────────────
+  /forms:
+    get:
+      operationId: listForms
+      tags: [forms]
+      summary: List forms
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of forms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Form"
+    post:
+      operationId: createForm
+      tags: [forms]
+      summary: Create a form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormInput"
+      responses:
+        "201":
+          description: Form created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form"
+
+  /forms/{id}:
+    get:
+      operationId: getForm
+      tags: [forms]
+      summary: Get a form by ID, including its versions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The form and its versions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormWithVersions"
+        "404":
+          description: Form not found
+    patch:
+      operationId: updateForm
+      tags: [forms]
+      summary: Update a form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormUpdateInput"
+      responses:
+        "200":
+          description: Form updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Form"
+        "404":
+          description: Form not found
+    delete:
+      operationId: deleteForm
+      tags: [forms]
+      summary: Delete a form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Form deleted
+        "404":
+          description: Form not found
+
+  /forms/{id}/versions:
+    post:
+      operationId: createFormVersion
+      tags: [forms]
+      summary: Create a new draft version (sections -> fields -> validations tree) for a form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormVersionInput"
+      responses:
+        "201":
+          description: Draft form version created with its full tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormVersionWithTree"
+        "404":
+          description: Form not found
+
+  /form-versions/{id}:
+    get:
+      operationId: getFormVersion
+      tags: [form-versions]
+      summary: Get a form version, including its full section/field/validation tree
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The form version and its nested tree
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormVersionWithNestedTree"
+        "404":
+          description: Form version not found
+
+  /form-versions/{id}/publish:
+    post:
+      operationId: publishFormVersion
+      tags: [form-versions]
+      summary: Publish a draft/testing form version, making it the single active version for its form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Form version published and activated; any prior active version for the same form is deprecated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormVersion"
+        "404":
+          description: Form version not found
+
+  /form-submissions:
+    get:
+      operationId: listFormSubmissions
+      tags: [form-submissions]
+      summary: List form submissions
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: formVersionId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, synced]
+      responses:
+        "200":
+          description: List of form submissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FormSubmission"
+    post:
+      operationId: createFormSubmission
+      tags: [form-submissions]
+      summary: Create a form submission (draft or submitted); submitted runs calculation, validation, and optional workflow kickoff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormSubmissionInput"
+      responses:
+        "201":
+          description: Submission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormSubmissionWithValues"
+        "400":
+          description: Validation failed (only when status is "submitted")
+        "404":
+          description: Form version not found
+
+  /form-submissions/{id}:
+    get:
+      operationId: getFormSubmission
+      tags: [form-submissions]
+      summary: Get a form submission, including its values keyed by fieldKey
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The form submission and its values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormSubmissionWithValues"
+        "404":
+          description: Form submission not found
+
+  /form-submissions/{id}/sync:
+    post:
+      operationId: syncFormSubmission
+      tags: [form-submissions]
+      summary: Acknowledge that an offline-saved draft has been durably synced to the server
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Submission marked as synced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormSubmission"
+        "404":
+          description: Form submission not found
+
+  /notification-templates:
+    get:
+      operationId: listNotificationTemplates
+      tags: [notification-templates]
+      summary: List notification templates
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, sms, push, in_app, announcement]
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationTemplate"
+    post:
+      operationId: createNotificationTemplate
+      tags: [notification-templates]
+      summary: Create a notification template version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationTemplateInput"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+
+  /notification-templates/{id}:
+    get:
+      operationId: getNotificationTemplate
+      tags: [notification-templates]
+      summary: Get a notification template by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+        "404":
+          description: Template not found
+    patch:
+      operationId: updateNotificationTemplate
+      tags: [notification-templates]
+      summary: Update a draft template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationTemplateUpdate"
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+        "404":
+          description: Template not found
+        "409":
+          description: Only draft templates can be edited; publish creates a new version
+
+  /notification-templates/{id}/publish:
+    post:
+      operationId: publishNotificationTemplate
+      tags: [notification-templates]
+      summary: Activate a draft template, deprecating the previous active one for its code/channel/locale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Template activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+        "404":
+          description: Template not found
+
+  /notification-templates/{id}/preview:
+    post:
+      operationId: previewNotificationTemplate
+      tags: [notification-templates]
+      summary: Render a template against a sample payload without sending anything
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreviewInput"
+      responses:
+        "200":
+          description: Rendered preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreview"
+        "404":
+          description: Template not found
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: channel
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, queued, sent, failed, cancelled]
+        - name: eventType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    post:
+      operationId: createNotification
+      tags: [notifications]
+      summary: Create a notification and queue it for delivery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationInput"
+      responses:
+        "201":
+          description: Notification created and queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationWithRecipients"
+        "400":
+          description: Template variables missing, or no resolvable recipients
+        "404":
+          description: Template not found
+
+  /notifications/{id}:
+    get:
+      operationId: getNotification
+      tags: [notifications]
+      summary: Get a notification with its queue items and delivery history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The notification and its delivery detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationDetail"
+        "404":
+          description: Notification not found
+
+  /notifications/{id}/cancel:
+    post:
+      operationId: cancelNotification
+      tags: [notifications]
+      summary: Cancel a notification and any of its queue items not yet sent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "404":
+          description: Notification not found
+
+  /notifications/send:
+    post:
+      operationId: sendNotifications
+      tags: [notifications]
+      summary: Drain due queue items, delivering them through their channel adapters
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSendInput"
+      responses:
+        "200":
+          description: Batch delivery result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSendResult"
+
+  /notifications/history:
+    get:
+      operationId: listNotificationHistory
+      tags: [notifications]
+      summary: Delivery audit trail across notifications
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: notificationId
+          in: query
+          schema:
+            type: integer
+        - name: eventType
+          in: query
+          schema:
+            type: string
+            enum: [queued, attempted, sent, delivered, failed, read, cancelled]
+      responses:
+        "200":
+          description: Delivery events, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationDeliveryEvent"
+
+  /notification-preferences:
+    get:
+      operationId: listNotificationPreferences
+      tags: [notification-preferences]
+      summary: List notification preferences for a user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The user's preferences
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationPreference"
+    put:
+      operationId: setNotificationPreference
+      tags: [notification-preferences]
+      summary: Enable or disable a channel for a user, optionally for one event type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferenceInput"
+      responses:
+        "200":
+          description: Preference saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreference"
+
+  /document-templates:
+    get:
+      operationId: listDocumentTemplates
+      tags: [document-templates]
+      summary: List document templates
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentTemplate"
+    post:
+      operationId: createDocumentTemplate
+      tags: [document-templates]
+      summary: Create a draft document template version
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentTemplateInput"
+      responses:
+        "201":
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplate"
+
+  /document-templates/{id}:
+    get:
+      operationId: getDocumentTemplate
+      tags: [document-templates]
+      summary: Get a document template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplate"
+        "404":
+          description: Template not found
+    patch:
+      operationId: updateDocumentTemplate
+      tags: [document-templates]
+      summary: Update a draft template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentTemplateUpdate"
+      responses:
+        "200":
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplate"
+        "404":
+          description: Template not found
+        "409":
+          description: Only draft templates can be edited
+
+  /document-templates/{id}/publish:
+    post:
+      operationId: publishDocumentTemplate
+      tags: [document-templates]
+      summary: Activate a draft template, deprecating the previous active one for its code/locale
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Template activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentTemplate"
+        "404":
+          description: Template not found
+
+  /documents:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      summary: List documents
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: documentType
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, generated, reviewed, approved, signed, archived, retained, disposed]
+        - name: resourceType
+          in: query
+          schema:
+            type: string
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: createDocument
+      tags: [documents]
+      summary: Create a document, optionally generating its first version immediately
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "201":
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDetail"
+        "400":
+          description: Template variables missing
+        "404":
+          description: Template not found
+
+  /documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [documents]
+      summary: Get a document with its versions, signatures, and attachments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The document and its detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDetail"
+        "404":
+          description: Document not found
+
+  /documents/{id}/generate:
+    post:
+      operationId: generateDocument
+      tags: [documents]
+      summary: Render the document's template into a new immutable version
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentGenerateInput"
+      responses:
+        "200":
+          description: New version generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentDetail"
+        "400":
+          description: Template variables missing
+        "404":
+          description: Document or template not found
+
+  /documents/{id}/status:
+    post:
+      operationId: updateDocumentStatus
+      tags: [documents]
+      summary: Advance a document through its lifecycle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentStatusInput"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "404":
+          description: Document not found
+        "409":
+          description: Lifecycle stages only move forward
+
+  /documents/{id}/content:
+    get:
+      operationId: getDocumentContent
+      tags: [documents]
+      summary: Download the rendered content of a document version, recording the access
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rendered content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentContent"
+        "404":
+          description: Document or version not found
+
+  /documents/{id}/sign:
+    post:
+      operationId: signDocument
+      tags: [documents]
+      summary: Apply an electronic signature to the document's current version
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentSignatureInput"
+      responses:
+        "201":
+          description: Signature recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentSignature"
+        "404":
+          description: Document not found
+        "409":
+          description: Document has no generated version to sign
+
+  /documents/{id}/access-logs:
+    get:
+      operationId: listDocumentAccessLogs
+      tags: [documents]
+      summary: Access and lifecycle trail for a document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Access events, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DocumentAccessLog"
+
+  /documents/verify/{uuid}:
+    get:
+      operationId: verifyDocument
+      tags: [documents]
+      summary: Public QR verification — confirms a document was issued without revealing its contents
+      security: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentVerification"
+
+  /attachments:
+    get:
+      operationId: listAttachments
+      tags: [attachments]
+      summary: List uploaded attachments
+      parameters:
+        - name: tenantId
+          in: query
+          schema:
+            type: integer
+        - name: attachedToType
+          in: query
+          schema:
+            type: string
+        - name: attachedToId
+          in: query
+          schema:
+            type: string
+        - name: documentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of attachments (without file content)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Attachment"
+    post:
+      operationId: createAttachment
+      tags: [attachments]
+      summary: Upload a file and get back the UUID a form field stores
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachmentInput"
+      responses:
+        "201":
+          description: Attachment stored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+
+  /attachments/{uuid}:
+    get:
+      operationId: getAttachment
+      tags: [attachments]
+      summary: Get an attachment's metadata and content
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The attachment with its base64 content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentWithContent"
+        "404":
+          description: Attachment not found
+
+  /search:
+    get:
+      operationId: search
+      tags: [search]
+      summary: Global and entity-scoped search across indexed records
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: entityTypes
+          in: query
+          description: Comma-separated entity types to restrict to; omit for a global search
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ranked results the caller is permitted to see
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalSearchResponse"
+
+  /search/entity-types:
+    get:
+      operationId: listSearchableEntityTypes
+      tags: [search]
+      summary: The entity types the search index knows how to hold
+      responses:
+        "200":
+          description: Supported entity types
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entityTypes]
+                properties:
+                  entityTypes:
+                    type: array
+                    items:
+                      type: string
+
+  /search/reindex:
+    post:
+      operationId: reindexSearch
+      tags: [search]
+      summary: Rebuild the caller's tenant search index from current records
+      responses:
+        "200":
+          description: Per-entity-type counts of what was indexed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReindexResult"
+
+  /integrations/endpoints:
+    get:
+      operationId: listIntegrationEndpoints
+      tags: [integrations]
+      summary: List registered integration endpoints
+      responses:
+        "200":
+          description: Endpoints for the caller's tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntegrationEndpoint"
+    post:
+      operationId: createIntegrationEndpoint
+      tags: [integrations]
+      summary: Register an integration endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationEndpointInput"
+      responses:
+        "201":
+          description: Endpoint registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationEndpoint"
+        "400":
+          description: Invalid input
+
+  /integrations/endpoints/{id}:
+    get:
+      operationId: getIntegrationEndpoint
+      tags: [integrations]
+      summary: Get an integration endpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The endpoint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationEndpoint"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateIntegrationEndpoint
+      tags: [integrations]
+      summary: Update an integration endpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationEndpointUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationEndpoint"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteIntegrationEndpoint
+      tags: [integrations]
+      summary: Delete an integration endpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /integrations/webhooks:
+    get:
+      operationId: listWebhooks
+      tags: [integrations]
+      summary: List webhook subscriptions
+      responses:
+        "200":
+          description: Subscriptions for the caller's tenant (secrets omitted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WebhookSubscription"
+    post:
+      operationId: registerWebhook
+      tags: [integrations]
+      summary: Register a webhook subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookSubscriptionInput"
+      responses:
+        "201":
+          description: Created; the signing secret is returned exactly once here
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscriptionWithSecret"
+        "400":
+          description: Invalid input
+
+  /integrations/webhooks/{id}:
+    get:
+      operationId: getWebhook
+      tags: [integrations]
+      summary: Get a webhook subscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The subscription (secret omitted)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "404":
+          description: Not found
+
+  /integrations/webhooks/{id}/status:
+    patch:
+      operationId: setWebhookStatus
+      tags: [integrations]
+      summary: Pause, resume, or disable a webhook subscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookStatusInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "404":
+          description: Not found
+
+  /integrations/events:
+    get:
+      operationId: listIntegrationEvents
+      tags: [integrations]
+      summary: List published integration events
+      parameters:
+        - name: eventType
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Events for the caller's tenant, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntegrationEvent"
+    post:
+      operationId: publishIntegrationEvent
+      tags: [integrations]
+      summary: Publish an internal event, fanning out to matching webhook subscriptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishEventInput"
+      responses:
+        "201":
+          description: Event persisted and queued for delivery
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishEventResult"
+        "400":
+          description: Invalid input
+
+  /integrations/retry-queue:
+    get:
+      operationId: listRetryQueue
+      tags: [integrations]
+      summary: Inspect the outbound delivery retry queue
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, delivered, failed, dead_letter]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Retry-queue items for the caller's tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RetryQueueItem"
+
+  /integrations/retry-queue/process:
+    post:
+      operationId: processRetryQueue
+      tags: [integrations]
+      summary: Run one worker pass over due retry-queue items
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessRetryQueueInput"
+      responses:
+        "200":
+          description: Batch delivery result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessRetryQueueResult"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    # ── AUTH ────────────────────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResult:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserWithRoles"
+
+    # ── TENANT ──────────────────────────────────────────────────────────────────
+    Tenant:
+      type: object
+      required: [id, name, slug, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        contactEmail:
+          type: ["string", "null"]
+        contactPhone:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        province:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TenantInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        address:
+          type: string
+        province:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+
+    TenantUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        contactEmail:
+          type: string
+        contactPhone:
+          type: string
+        address:
+          type: string
+        province:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+
+    # ── DEPARTMENT ──────────────────────────────────────────────────────────────
+    Department:
+      type: object
+      required: [id, tenantId, name, code, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        parentId:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DepartmentInput:
+      type: object
+      required: [tenantId, name, code]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        parentId:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+
+    DepartmentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        parentId:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+
+    # ── USER ────────────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, tenantId, firstName, lastName, email, username, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        departmentId:
+          type: ["integer", "null"]
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        lastLoginAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserWithRoles:
+      type: object
+      required: [id, tenantId, firstName, lastName, email, username, status, roles, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        departmentId:
+          type: ["integer", "null"]
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        lastLoginAt:
+          type: ["string", "null"]
+          format: date-time
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserInput:
+      type: object
+      required: [tenantId, firstName, lastName, email, username, password]
+      properties:
+        tenantId:
+          type: integer
+        departmentId:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+
+    UserUpdate:
+      type: object
+      properties:
+        departmentId:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+
+    UserStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+
+    RoleAssignment:
+      type: object
+      required: [roleId]
+      properties:
+        roleId:
+          type: integer
+
+    # ── ROLE ────────────────────────────────────────────────────────────────────
+    Role:
+      type: object
+      required: [id, tenantId, name, code, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        isSystem:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RoleWithPermissions:
+      type: object
+      required: [id, tenantId, name, code, permissions, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        isSystem:
+          type: boolean
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RoleInput:
+      type: object
+      required: [tenantId, name, code]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        isSystem:
+          type: boolean
+
+    RoleUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+
+    PermissionAssignment:
+      type: object
+      required: [permissionId]
+      properties:
+        permissionId:
+          type: integer
+
+    # ── PERMISSION ──────────────────────────────────────────────────────────────
+    Permission:
+      type: object
+      required: [id, module, action, resource]
+      properties:
+        id:
+          type: integer
+        module:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        description:
+          type: ["string", "null"]
+
+    # ── AUDIT LOG ───────────────────────────────────────────────────────────────
+    AuditLog:
+      type: object
+      required: [id, action, resource, createdAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: ["integer", "null"]
+        userId:
+          type: ["integer", "null"]
+        userFullName:
+          type: ["string", "null"]
+        action:
+          type: string
+        resource:
+          type: string
+        resourceId:
+          type: ["string", "null"]
+        details:
+          type: ["string", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── IDENTITY STATS ──────────────────────────────────────────────────────────
+    IdentityStats:
+      type: object
+      required: [totalTenants, activeTenants, totalUsers, activeUsers, totalRoles, totalPermissions, recentLogins]
+      properties:
+        totalTenants:
+          type: integer
+        activeTenants:
+          type: integer
+        totalUsers:
+          type: integer
+        activeUsers:
+          type: integer
+        suspendedUsers:
+          type: integer
+        totalRoles:
+          type: integer
+        totalPermissions:
+          type: integer
+        totalDepartments:
+          type: integer
+        recentLogins:
+          type: integer
+
+    # ── WORKFLOW DEFINITION ────────────────────────────────────────────────────
+    WorkflowDefinition:
+      type: object
+      required: [id, tenantId, name, code, resourceType, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        resourceType:
+          type: string
+          description: The kind of business record this workflow governs (e.g. "permit_application", "leave_request")
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkflowDefinitionInput:
+      type: object
+      required: [tenantId, name, code, resourceType]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        resourceType:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    WorkflowDefinitionUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        resourceType:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    WorkflowDefinitionDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowDefinition"
+        - type: object
+          required: [versions]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowVersion"
+
+    # ── WORKFLOW STATE / TRANSITION ────────────────────────────────────────────
+    WorkflowState:
+      type: object
+      required: [id, workflowVersionId, name, code, type, isInitial, isFinal, sortOrder]
+      properties:
+        id:
+          type: integer
+        workflowVersionId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        type:
+          type: string
+          enum: [draft, review, approved, rejected, completed]
+        isInitial:
+          type: boolean
+        isFinal:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    WorkflowStateInput:
+      type: object
+      required: [key, name, code]
+      properties:
+        key:
+          type: string
+          description: Temporary client-side identifier used to reference this state from a transition's fromKey/toKey in the same request
+        name:
+          type: string
+        code:
+          type: string
+        type:
+          type: string
+          enum: [draft, review, approved, rejected, completed]
+        isInitial:
+          type: boolean
+        isFinal:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    WorkflowTransition:
+      type: object
+      required: [id, workflowVersionId, name, fromStateId, toStateId]
+      properties:
+        id:
+          type: integer
+        workflowVersionId:
+          type: integer
+        name:
+          type: string
+        fromStateId:
+          type: integer
+        toStateId:
+          type: integer
+        requiredPermission:
+          type: ["string", "null"]
+
+    WorkflowTransitionInput:
+      type: object
+      required: [name, fromKey, toKey]
+      properties:
+        name:
+          type: string
+        fromKey:
+          type: string
+          description: Must match a WorkflowStateInput.key in the same request
+        toKey:
+          type: string
+          description: Must match a WorkflowStateInput.key in the same request
+        requiredPermission:
+          type: string
+
+    # ── WORKFLOW VERSION ───────────────────────────────────────────────────────
+    WorkflowVersion:
+      type: object
+      required: [id, workflowDefinitionId, version, isPublished, createdAt]
+      properties:
+        id:
+          type: integer
+        workflowDefinitionId:
+          type: integer
+        version:
+          type: integer
+        isPublished:
+          type: boolean
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    WorkflowVersionInput:
+      type: object
+      required: [states, transitions]
+      properties:
+        states:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowStateInput"
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowTransitionInput"
+
+    WorkflowVersionDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowVersion"
+        - type: object
+          required: [states, transitions]
+          properties:
+            states:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowState"
+            transitions:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowTransition"
+
+    # ── WORKFLOW INSTANCE ──────────────────────────────────────────────────────
+    WorkflowInstance:
+      type: object
+      required: [id, workflowVersionId, tenantId, resourceType, resourceId, currentStateId, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        workflowVersionId:
+          type: integer
+        tenantId:
+          type: integer
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        currentStateId:
+          type: integer
+        status:
+          type: string
+          enum: [in_progress, completed, cancelled]
+        initiatedBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkflowInstanceInput:
+      type: object
+      required: [workflowDefinitionId, resourceId]
+      properties:
+        workflowDefinitionId:
+          type: integer
+        resourceId:
+          type: string
+        firstAssigneeUserId:
+          type: integer
+        firstAssigneeRoleId:
+          type: integer
+
+    WorkflowInstanceDetail:
+      allOf:
+        - $ref: "#/components/schemas/WorkflowInstance"
+        - type: object
+          required: [currentState, tasks, history]
+          properties:
+            currentState:
+              $ref: "#/components/schemas/WorkflowState"
+            tasks:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowTask"
+            history:
+              type: array
+              items:
+                $ref: "#/components/schemas/WorkflowHistoryEntry"
+
+    # ── WORKFLOW TASK ──────────────────────────────────────────────────────────
+    WorkflowTask:
+      type: object
+      required: [id, workflowInstanceId, stateId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        workflowInstanceId:
+          type: integer
+        stateId:
+          type: integer
+        assigneeUserId:
+          type: ["integer", "null"]
+        assigneeRoleId:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        comment:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: ["string", "null"]
+          format: date-time
+        resolvedBy:
+          type: ["integer", "null"]
+
+    WorkflowTaskActionInput:
+      type: object
+      properties:
+        transitionId:
+          type: integer
+          description: Explicit transition to take. If omitted, the transition named "Approve"/"Reject" from the task's current state is used.
+        comment:
+          type: string
+        nextAssigneeUserId:
+          type: integer
+        nextAssigneeRoleId:
+          type: integer
+
+    # ── WORKFLOW HISTORY ───────────────────────────────────────────────────────
+    WorkflowHistoryEntry:
+      type: object
+      required: [id, workflowInstanceId, toStateId, action, createdAt]
+      properties:
+        id:
+          type: integer
+        workflowInstanceId:
+          type: integer
+        transitionId:
+          type: ["integer", "null"]
+        fromStateId:
+          type: ["integer", "null"]
+        toStateId:
+          type: integer
+        actorUserId:
+          type: ["integer", "null"]
+        action:
+          type: string
+        comment:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── RULES (Book 06) ────────────────────────────────────────────────────────
+    Rule:
+      type: object
+      required: [id, tenantId, name, code, module, ruleType, resourceType, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        module:
+          type: string
+          description: Owning module, e.g. "agriculture", "permits"
+        ruleType:
+          type: string
+          enum: [validation, eligibility, approval, calculation, notification, routing, security, compliance]
+        resourceType:
+          type: string
+          description: The kind of business record this rule evaluates (e.g. "permit_application")
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RuleInput:
+      type: object
+      required: [tenantId, name, code, module, ruleType, resourceType]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        module:
+          type: string
+        ruleType:
+          type: string
+          enum: [validation, eligibility, approval, calculation, notification, routing, security, compliance]
+        resourceType:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    RuleUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        module:
+          type: string
+        ruleType:
+          type: string
+          enum: [validation, eligibility, approval, calculation, notification, routing, security, compliance]
+        resourceType:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+
+    RuleDetail:
+      allOf:
+        - $ref: "#/components/schemas/Rule"
+        - type: object
+          required: [versions]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/RuleVersion"
+
+    # ── RULE GROUP / CONDITION / ACTION ────────────────────────────────────────
+    RuleGroup:
+      type: object
+      required: [id, ruleVersionId, logicalOperator, sortOrder]
+      properties:
+        id:
+          type: integer
+        ruleVersionId:
+          type: integer
+        parentGroupId:
+          type: ["integer", "null"]
+        logicalOperator:
+          type: string
+          enum: [AND, OR]
+        sortOrder:
+          type: integer
+
+    RuleGroupInput:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+          description: Temporary client-side identifier used to reference this group as a parentKey/groupKey elsewhere in the same request
+        parentKey:
+          type: string
+          description: Omit for the single root group of the version
+        logicalOperator:
+          type: string
+          enum: [AND, OR]
+        sortOrder:
+          type: integer
+
+    RuleCondition:
+      type: object
+      required: [id, ruleVersionId, groupId, field, operator, value, sortOrder]
+      properties:
+        id:
+          type: integer
+        ruleVersionId:
+          type: integer
+        groupId:
+          type: integer
+        field:
+          type: string
+        operator:
+          type: string
+          enum: [equals, not_equals, greater_than, greater_than_or_equal, less_than, less_than_or_equal, contains, in, not_in]
+        value:
+          type: string
+          description: JSON-encoded literal or array compared against context[field]
+        sortOrder:
+          type: integer
+
+    RuleConditionInput:
+      type: object
+      required: [groupKey, field, operator, value]
+      properties:
+        groupKey:
+          type: string
+          description: Must match a RuleGroupInput.key in the same request
+        field:
+          type: string
+        operator:
+          type: string
+          enum: [equals, not_equals, greater_than, greater_than_or_equal, less_than, less_than_or_equal, contains, in, not_in]
+        value:
+          description: JSON-encodable literal or array compared against context[field]
+        sortOrder:
+          type: integer
+
+    RuleAction:
+      type: object
+      required: [id, ruleVersionId, actionType, sortOrder]
+      properties:
+        id:
+          type: integer
+        ruleVersionId:
+          type: integer
+        actionType:
+          type: string
+          enum: [require_approval, set_field, calculate, notify, route, deny, flag_compliance]
+        target:
+          type: ["string", "null"]
+        value:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+
+    RuleActionInput:
+      type: object
+      required: [actionType]
+      properties:
+        actionType:
+          type: string
+          enum: [require_approval, set_field, calculate, notify, route, deny, flag_compliance]
+        target:
+          type: string
+        value:
+          type: string
+        sortOrder:
+          type: integer
+
+    # ── RULE VERSION ────────────────────────────────────────────────────────────
+    RuleVersion:
+      type: object
+      required: [id, ruleId, version, status, priority, createdAt]
+      properties:
+        id:
+          type: integer
+        ruleId:
+          type: integer
+        version:
+          type: integer
+        status:
+          type: string
+          enum: [draft, testing, published, active, deprecated, archived]
+        priority:
+          type: integer
+          description: Lower number is evaluated / returned first when multiple active rules match the same request
+        effectiveDate:
+          type: ["string", "null"]
+          format: date-time
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    RuleVersionInput:
+      type: object
+      required: [groups, conditions, actions]
+      properties:
+        priority:
+          type: integer
+        effectiveDate:
+          type: string
+          format: date-time
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleGroupInput"
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleConditionInput"
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleActionInput"
+
+    RuleVersionDetail:
+      allOf:
+        - $ref: "#/components/schemas/RuleVersion"
+        - type: object
+          required: [groups, conditions, actions]
+          properties:
+            groups:
+              type: array
+              items:
+                $ref: "#/components/schemas/RuleGroup"
+            conditions:
+              type: array
+              items:
+                $ref: "#/components/schemas/RuleCondition"
+            actions:
+              type: array
+              items:
+                $ref: "#/components/schemas/RuleAction"
+
+    # ── RULE EVALUATION ─────────────────────────────────────────────────────────
+    RuleEvaluationInput:
+      type: object
+      required: [tenantId, resourceType, context]
+      properties:
+        tenantId:
+          type: integer
+        module:
+          type: string
+        resourceType:
+          type: string
+        context:
+          type: object
+          additionalProperties: true
+          description: Field values the engine reads when evaluating conditions
+
+    RuleEvaluationResult:
+      type: object
+      required: [decisions, failures]
+      properties:
+        decisions:
+          type: array
+          items:
+            type: object
+            required: [ruleId, ruleCode, ruleVersionId, matched, actions]
+            properties:
+              ruleId:
+                type: integer
+              ruleCode:
+                type: string
+              ruleVersionId:
+                type: integer
+              matched:
+                type: boolean
+              actions:
+                type: array
+                items:
+                  type: object
+                  required: [actionType]
+                  properties:
+                    actionType:
+                      type: string
+                    target:
+                      type: ["string", "null"]
+                    value:
+                      type: ["string", "null"]
+        failures:
+          type: array
+          items:
+            type: object
+            required: [ruleId, error]
+            properties:
+              ruleId:
+                type: integer
+              error:
+                type: string
+
+    # ── RULE HISTORY ────────────────────────────────────────────────────────────
+    RuleHistoryEntry:
+      type: object
+      required: [id, ruleId, eventType, createdAt]
+      properties:
+        id:
+          type: integer
+        ruleId:
+          type: integer
+        ruleVersionId:
+          type: ["integer", "null"]
+        eventType:
+          type: string
+          enum: [published, evaluated, failed, expired, archived]
+        context:
+          type: ["string", "null"]
+          description: JSON snapshot of the evaluation context, when applicable
+        result:
+          type: ["string", "null"]
+          description: JSON snapshot of the decision or error, when applicable
+        actorUserId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── FORMS (Book 07) ────────────────────────────────────────────────────────
+    Form:
+      type: object
+      required: [id, tenantId, name, code, module, resourceType, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        module:
+          type: string
+          description: Owning module, e.g. "agriculture", "permits"
+        resourceType:
+          type: string
+          description: The kind of business record this form collects (e.g. "permit_application")
+        workflowDefinitionId:
+          type: ["integer", "null"]
+          description: Optional; a submitted (non-draft) submission of this form starts an instance of this workflow
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FormInput:
+      type: object
+      required: [tenantId, name, code, module, resourceType]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        module:
+          type: string
+        resourceType:
+          type: string
+        workflowDefinitionId:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+
+    FormUpdateInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        module:
+          type: string
+        resourceType:
+          type: string
+        workflowDefinitionId:
+          type: integer
+        status:
+          type: string
+          enum: [active, inactive]
+
+    FormVersion:
+      type: object
+      required: [id, formId, version, status, locale, createdAt]
+      properties:
+        id:
+          type: integer
+        formId:
+          type: integer
+        version:
+          type: integer
+        status:
+          type: string
+          enum: [draft, testing, published, active, deprecated, archived]
+        locale:
+          type: string
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    FormWithVersions:
+      allOf:
+        - $ref: "#/components/schemas/Form"
+        - type: object
+          required: [versions]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/FormVersion"
+
+    FormSectionInput:
+      type: object
+      required: [key, title]
+      properties:
+        key:
+          type: string
+          description: Temporary client-side identifier used to reference this section as a sectionKey elsewhere in the same request
+        tab:
+          type: string
+          description: Optional grouping label; sections with no tab render ungrouped
+        title:
+          type: string
+        description:
+          type: string
+        sortOrder:
+          type: integer
+
+    FormFieldInput:
+      type: object
+      required: [sectionKey, fieldKey, label, fieldType]
+      properties:
+        sectionKey:
+          type: string
+          description: Must match a section.key in the same request
+        fieldKey:
+          type: string
+          description: Stable key used in submission values and as the Rules Engine context field name
+        label:
+          type: string
+        fieldType:
+          type: string
+          enum: [text, textarea, number, currency, date, time, select, multi_select, radio, checkbox, switch, file_upload, image, signature, qr_scanner, gps_location, rich_text]
+        helpText:
+          type: string
+        placeholder:
+          type: string
+        defaultValue:
+          description: JSON-encodable default value
+        options:
+          type: array
+          description: For select/multi_select/radio
+          items:
+            type: object
+            required: [label, value]
+            properties:
+              label:
+                type: string
+              value: {}
+        required:
+          type: boolean
+        readOnly:
+          type: boolean
+        hidden:
+          type: boolean
+        visibilityRuleCode:
+          type: string
+          description: Rules Engine rule code; field is shown only if that rule matches
+        calculationRuleCode:
+          type: string
+          description: Rules Engine rule code; a matching action targeting this fieldKey overwrites its value
+        sortOrder:
+          type: integer
+
+    FieldValidationInput:
+      type: object
+      required: [fieldKey, validationType]
+      properties:
+        fieldKey:
+          type: string
+          description: Must match a field.fieldKey in the same request
+        validationType:
+          type: string
+          enum: [required, min, max, regex, range, cross_field, custom_rule]
+        config:
+          description: Shape depends on validationType (see field_validations schema doc)
+        errorMessage:
+          type: string
+        sortOrder:
+          type: integer
+
+    FormVersionInput:
+      type: object
+      required: [sections, fields, validations]
+      properties:
+        locale:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormSectionInput"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormFieldInput"
+        validations:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldValidationInput"
+
+    FormSection:
+      type: object
+      required: [id, formVersionId, title, sortOrder]
+      properties:
+        id:
+          type: integer
+        formVersionId:
+          type: integer
+        tab:
+          type: ["string", "null"]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+
+    FormField:
+      type: object
+      required: [id, formVersionId, sectionId, fieldKey, label, fieldType, required, readOnly, hidden, sortOrder]
+      properties:
+        id:
+          type: integer
+        formVersionId:
+          type: integer
+        sectionId:
+          type: integer
+        fieldKey:
+          type: string
+        label:
+          type: string
+        fieldType:
+          type: string
+        helpText:
+          type: ["string", "null"]
+        placeholder:
+          type: ["string", "null"]
+        defaultValue:
+          type: ["string", "null"]
+        options:
+          type: ["string", "null"]
+        required:
+          type: boolean
+        readOnly:
+          type: boolean
+        hidden:
+          type: boolean
+        visibilityRuleCode:
+          type: ["string", "null"]
+        calculationRuleCode:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+
+    FieldValidation:
+      type: object
+      required: [id, formFieldId, validationType, sortOrder]
+      properties:
+        id:
+          type: integer
+        formFieldId:
+          type: integer
+        validationType:
+          type: string
+        config:
+          type: ["string", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+
+    FormVersionWithTree:
+      allOf:
+        - $ref: "#/components/schemas/FormVersion"
+        - type: object
+          required: [sections, fields, validations]
+          properties:
+            sections:
+              type: array
+              items:
+                $ref: "#/components/schemas/FormSection"
+            fields:
+              type: array
+              items:
+                $ref: "#/components/schemas/FormField"
+            validations:
+              type: array
+              items:
+                $ref: "#/components/schemas/FieldValidation"
+
+    FormVersionWithNestedTree:
+      allOf:
+        - $ref: "#/components/schemas/FormVersion"
+        - type: object
+          required: [sections]
+          properties:
+            sections:
+              type: array
+              items:
+                allOf:
+                  - $ref: "#/components/schemas/FormSection"
+                  - type: object
+                    properties:
+                      fields:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: "#/components/schemas/FormField"
+                            - type: object
+                              properties:
+                                validations:
+                                  type: array
+                                  items:
+                                    $ref: "#/components/schemas/FieldValidation"
+
+    FormSubmission:
+      type: object
+      required: [id, formVersionId, tenantId, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        formVersionId:
+          type: integer
+        tenantId:
+          type: integer
+        submittedByUserId:
+          type: ["integer", "null"]
+        workflowInstanceId:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [draft, submitted, synced]
+        submittedAt:
+          type: ["string", "null"]
+          format: date-time
+        syncedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FormSubmissionInput:
+      type: object
+      required: [formVersionId, values]
+      properties:
+        formVersionId:
+          type: integer
+        status:
+          type: string
+          enum: [draft, submitted]
+          description: Defaults to "submitted", which runs calculation, validation, and (if the form has a workflowDefinitionId) starts a workflow instance. "draft" skips all three.
+        values:
+          type: object
+          description: Answers keyed by fieldKey; values may be any JSON-encodable type
+          additionalProperties: true
+
+    FormSubmissionWithValues:
+      allOf:
+        - $ref: "#/components/schemas/FormSubmission"
+        - type: object
+          required: [values]
+          properties:
+            values:
+              type: object
+              additionalProperties: true
+
+    NotificationTemplate:
+      type: object
+      required: [id, tenantId, name, code, channel, locale, version, body, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+          description: Stable identifier events reference, e.g. "WORKFLOW_APPROVED"
+        channel:
+          type: string
+          enum: [email, sms, push, in_app, announcement]
+        locale:
+          type: string
+        version:
+          type: integer
+        subject:
+          type: string
+          nullable: true
+        body:
+          type: string
+          description: Supports {{variable}} placeholders
+        variables:
+          type: string
+          nullable: true
+          description: JSON-encoded array of placeholder names the body expects
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationTemplateInput:
+      type: object
+      required: [tenantId, name, code, channel, body]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        channel:
+          type: string
+          enum: [email, sms, push, in_app, announcement]
+        locale:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+
+    NotificationTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+
+    NotificationPreviewInput:
+      type: object
+      required: [payload]
+      properties:
+        payload:
+          type: object
+          description: Variable values substituted into the template
+          additionalProperties: true
+
+    NotificationPreview:
+      type: object
+      required: [body, missingVariables]
+      properties:
+        subject:
+          type: string
+          nullable: true
+        body:
+          type: string
+        missingVariables:
+          type: array
+          description: Placeholders the payload did not supply; these are left verbatim in the output
+          items:
+            type: string
+
+    Notification:
+      type: object
+      required: [id, tenantId, eventType, channel, body, priority, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        templateId:
+          type: integer
+          nullable: true
+        eventType:
+          type: string
+        resourceType:
+          type: string
+          nullable: true
+        resourceId:
+          type: string
+          nullable: true
+        channel:
+          type: string
+          enum: [email, sms, push, in_app, announcement]
+        subject:
+          type: string
+          nullable: true
+        body:
+          type: string
+        payload:
+          type: string
+          nullable: true
+          description: JSON-encoded variables used when rendering
+        priority:
+          type: string
+          enum: [high, normal, low]
+        status:
+          type: string
+          enum: [pending, queued, sent, failed, cancelled]
+        scheduledFor:
+          type: string
+          format: date-time
+          nullable: true
+        createdByUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationInput:
+      type: object
+      required: [tenantId, eventType]
+      properties:
+        tenantId:
+          type: integer
+        templateCode:
+          type: string
+          description: Resolves the active template for this code/channel/locale. Omit to supply body directly.
+        channel:
+          type: string
+          enum: [email, sms, push, in_app, announcement]
+        locale:
+          type: string
+        eventType:
+          type: string
+          description: The business event that triggered this, e.g. "WorkflowApproved"
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        subject:
+          type: string
+          description: Used only when sending without a template
+        body:
+          type: string
+          description: Used only when sending without a template
+        payload:
+          type: object
+          description: Variable values substituted into the template
+          additionalProperties: true
+        priority:
+          type: string
+          enum: [high, normal, low]
+        scheduledFor:
+          type: string
+          format: date-time
+          description: Omit for immediate delivery
+        recipientUserIds:
+          type: array
+          items:
+            type: integer
+        recipientRoleIds:
+          type: array
+          description: Every active user holding one of these roles becomes a recipient
+          items:
+            type: integer
+        recipientAddresses:
+          type: array
+          description: Raw addresses for recipients who are not platform users
+          items:
+            type: string
+
+    NotificationWithRecipients:
+      allOf:
+        - $ref: "#/components/schemas/Notification"
+        - type: object
+          required: [queued]
+          properties:
+            queued:
+              type: integer
+              description: Number of queue items created
+            suppressedUserIds:
+              type: array
+              description: Recipients skipped because they disabled this channel
+              items:
+                type: integer
+            unroutableUserIds:
+              type: array
+              description: Recipients with no address for this channel
+              items:
+                type: integer
+
+    NotificationQueueItem:
+      type: object
+      required: [id, notificationId, tenantId, recipientAddress, channel, priority, status, attempts, maxAttempts, availableAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        notificationId:
+          type: integer
+        tenantId:
+          type: integer
+        recipientUserId:
+          type: integer
+          nullable: true
+        recipientAddress:
+          type: string
+        channel:
+          type: string
+        priority:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, sent, failed, dead_letter, cancelled]
+        attempts:
+          type: integer
+        maxAttempts:
+          type: integer
+        availableAt:
+          type: string
+          format: date-time
+        lastError:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationDeliveryEvent:
+      type: object
+      required: [id, notificationId, tenantId, recipientAddress, channel, eventType, attempt, createdAt]
+      properties:
+        id:
+          type: integer
+        notificationId:
+          type: integer
+        queueItemId:
+          type: integer
+          nullable: true
+        tenantId:
+          type: integer
+        recipientAddress:
+          type: string
+        channel:
+          type: string
+        eventType:
+          type: string
+          enum: [queued, attempted, sent, delivered, failed, read, cancelled]
+        attempt:
+          type: integer
+        providerMessageId:
+          type: string
+          nullable: true
+        providerResponse:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Notification"
+        - type: object
+          required: [queueItems, deliveries]
+          properties:
+            queueItems:
+              type: array
+              items:
+                $ref: "#/components/schemas/NotificationQueueItem"
+            deliveries:
+              type: array
+              items:
+                $ref: "#/components/schemas/NotificationDeliveryEvent"
+
+    NotificationSendInput:
+      type: object
+      properties:
+        tenantId:
+          type: integer
+        limit:
+          type: integer
+          description: Maximum queue items to process in this batch (default 25, max 100)
+
+    NotificationSendResult:
+      type: object
+      required: [processed, sent, failed, deadLettered]
+      properties:
+        processed:
+          type: integer
+        sent:
+          type: integer
+        failed:
+          type: integer
+          description: Attempts that failed but will be retried
+        deadLettered:
+          type: integer
+          description: Items that exhausted maxAttempts
+
+    NotificationPreference:
+      type: object
+      required: [id, tenantId, userId, channel, enabled, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        userId:
+          type: integer
+        channel:
+          type: string
+          enum: [email, sms, push, in_app, announcement]
+        eventType:
+          type: string
+          nullable: true
+          description: Null means this is the default for the channel
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationPreferenceInput:
+      type: object
+      required: [tenantId, userId, channel, enabled]
+      properties:
+        tenantId:
+          type: integer
+        userId:
+          type: integer
+        channel:
+          type: string
+          enum: [email, sms, push, in_app, announcement]
+        eventType:
+          type: string
+          description: Omit to set the channel default
+        enabled:
+          type: boolean
+
+    DocumentTemplate:
+      type: object
+      required: [id, tenantId, name, code, module, documentType, templateType, locale, version, body, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+          nullable: true
+        module:
+          type: string
+        documentType:
+          type: string
+          enum: [certificate, permit, receipt, contract, report, letter]
+        templateType:
+          type: string
+          enum: [html, rich_text]
+        locale:
+          type: string
+        version:
+          type: integer
+        body:
+          type: string
+          description: Supports {{variable}} placeholders
+        variables:
+          type: string
+          nullable: true
+          description: JSON-encoded array of placeholder names
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DocumentTemplateInput:
+      type: object
+      required: [tenantId, name, code, module, documentType, body]
+      properties:
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        module:
+          type: string
+        documentType:
+          type: string
+          enum: [certificate, permit, receipt, contract, report, letter]
+        templateType:
+          type: string
+          enum: [html, rich_text]
+        locale:
+          type: string
+        body:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+
+    DocumentTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        body:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+
+    Document:
+      type: object
+      required: [id, uuid, tenantId, title, documentType, module, status, currentVersion, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          description: Public identifier used by storage keys and QR verification
+        tenantId:
+          type: integer
+        templateId:
+          type: integer
+          nullable: true
+        title:
+          type: string
+        documentType:
+          type: string
+        module:
+          type: string
+        resourceType:
+          type: string
+          nullable: true
+        resourceId:
+          type: string
+          nullable: true
+        referenceNumber:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, generated, reviewed, approved, signed, archived, retained, disposed]
+        currentVersion:
+          type: integer
+          description: 0 until the document has been generated
+        contentHash:
+          type: string
+          nullable: true
+        retainUntil:
+          type: string
+          format: date-time
+          nullable: true
+        createdByUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DocumentInput:
+      type: object
+      required: [tenantId, title, module]
+      properties:
+        tenantId:
+          type: integer
+        title:
+          type: string
+        module:
+          type: string
+        documentType:
+          type: string
+        templateCode:
+          type: string
+          description: Resolves the active template for this code/locale
+        locale:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        payload:
+          type: object
+          description: Variable values; supplying this generates version 1 immediately
+          additionalProperties: true
+        generate:
+          type: boolean
+          description: Generate the first version on creation (default true when templateCode and payload are supplied)
+
+    DocumentGenerateInput:
+      type: object
+      required: [payload]
+      properties:
+        templateCode:
+          type: string
+          description: Overrides the document's existing template
+        locale:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+
+    DocumentStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [draft, generated, reviewed, approved, signed, archived, retained, disposed]
+        detail:
+          type: string
+        retainUntil:
+          type: string
+          format: date-time
+
+    DocumentVersion:
+      type: object
+      required: [id, documentId, version, mimeType, storageProvider, contentHash, createdAt]
+      properties:
+        id:
+          type: integer
+        documentId:
+          type: integer
+        version:
+          type: integer
+        mimeType:
+          type: string
+        content:
+          type: string
+          nullable: true
+        storageProvider:
+          type: string
+          enum: [inline, local, nas, s3]
+        storageKey:
+          type: string
+          nullable: true
+        sizeBytes:
+          type: integer
+          nullable: true
+        contentHash:
+          type: string
+        payload:
+          type: string
+          nullable: true
+        generatedByUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    DocumentContent:
+      type: object
+      required: [documentId, version, mimeType, content, contentHash]
+      properties:
+        documentId:
+          type: integer
+        version:
+          type: integer
+        mimeType:
+          type: string
+        content:
+          type: string
+        contentHash:
+          type: string
+
+    DocumentSignature:
+      type: object
+      required: [id, documentId, documentVersionId, tenantId, signerName, signatureType, signedHash, signedAt]
+      properties:
+        id:
+          type: integer
+        documentId:
+          type: integer
+        documentVersionId:
+          type: integer
+        tenantId:
+          type: integer
+        signerUserId:
+          type: integer
+          nullable: true
+        signerName:
+          type: string
+        signerRole:
+          type: string
+          nullable: true
+        signatureType:
+          type: string
+          enum: [electronic, digital]
+        signatureData:
+          type: string
+          nullable: true
+        signedHash:
+          type: string
+        certificateSubject:
+          type: string
+          nullable: true
+        signedAt:
+          type: string
+          format: date-time
+
+    DocumentSignatureInput:
+      type: object
+      required: [signerName]
+      properties:
+        signerName:
+          type: string
+        signerRole:
+          type: string
+        signatureData:
+          type: string
+          description: Data URI of a drawn signature, when captured
+
+    DocumentAccessLog:
+      type: object
+      required: [id, documentId, tenantId, action, createdAt]
+      properties:
+        id:
+          type: integer
+        documentId:
+          type: integer
+        documentVersionId:
+          type: integer
+          nullable: true
+        tenantId:
+          type: integer
+        action:
+          type: string
+        detail:
+          type: string
+          nullable: true
+        actorUserId:
+          type: integer
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    DocumentDetail:
+      allOf:
+        - $ref: "#/components/schemas/Document"
+        - type: object
+          required: [versions, signatures, attachments]
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentVersion"
+            signatures:
+              type: array
+              items:
+                $ref: "#/components/schemas/DocumentSignature"
+            attachments:
+              type: array
+              items:
+                $ref: "#/components/schemas/Attachment"
+            missingVariables:
+              type: array
+              description: Present when a generation left placeholders unresolved
+              items:
+                type: string
+
+    DocumentVerification:
+      type: object
+      required: [valid]
+      properties:
+        valid:
+          type: boolean
+        reason:
+          type: string
+        document:
+          type: object
+          properties:
+            uuid:
+              type: string
+            title:
+              type: string
+            documentType:
+              type: string
+            referenceNumber:
+              type: string
+              nullable: true
+            status:
+              type: string
+            version:
+              type: integer
+            issuedAt:
+              type: string
+              format: date-time
+        signatures:
+          type: array
+          items:
+            type: object
+            properties:
+              signerName:
+                type: string
+              signerRole:
+                type: string
+                nullable: true
+              signedAt:
+                type: string
+                format: date-time
+
+    Attachment:
+      type: object
+      required: [id, uuid, tenantId, fileName, mimeType, sizeBytes, storageProvider, createdAt]
+      properties:
+        id:
+          type: integer
+        uuid:
+          type: string
+          description: The value a form file field stores in its submission
+        tenantId:
+          type: integer
+        documentId:
+          type: integer
+          nullable: true
+        attachedToType:
+          type: string
+          nullable: true
+        attachedToId:
+          type: string
+          nullable: true
+        fieldKey:
+          type: string
+          nullable: true
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+        storageProvider:
+          type: string
+        storageKey:
+          type: string
+          nullable: true
+        contentHash:
+          type: string
+          nullable: true
+        uploadedByUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    AttachmentWithContent:
+      allOf:
+        - $ref: "#/components/schemas/Attachment"
+        - type: object
+          properties:
+            content:
+              type: string
+              nullable: true
+              description: Base64 file content
+
+    AttachmentInput:
+      type: object
+      required: [tenantId, fileName, mimeType, content]
+      properties:
+        tenantId:
+          type: integer
+        fileName:
+          type: string
+        mimeType:
+          type: string
+        content:
+          type: string
+          description: Base64 file content
+        attachedToType:
+          type: string
+          description: e.g. "form_submission"
+        attachedToId:
+          type: string
+        fieldKey:
+          type: string
+          description: The form field this file satisfies
+        documentId:
+          type: integer
+
+    SearchResult:
+      type: object
+      required: [entityType, entityId, title, score, matchedIn]
+      properties:
+        entityType:
+          type: string
+        entityId:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+          nullable: true
+        content:
+          type: string
+        url:
+          type: string
+          nullable: true
+        score:
+          type: number
+        matchedIn:
+          type: array
+          items:
+            type: string
+            enum: [title, subtitle, content]
+
+    GlobalSearchResponse:
+      type: object
+      required: [results, total, query, searchedEntityTypes]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        total:
+          type: integer
+        query:
+          type: string
+        searchedEntityTypes:
+          type: array
+          items:
+            type: string
+
+    ReindexResult:
+      type: object
+      required: [tenantId, results]
+      properties:
+        tenantId:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            required: [entityType, indexed]
+            properties:
+              entityType:
+                type: string
+              indexed:
+                type: integer
+
+    IntegrationEndpoint:
+      type: object
+      required: [id, tenantId, name, code, baseUrl, authType, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        baseUrl:
+          type: string
+        authType:
+          type: string
+          enum: [none, api_key, bearer, basic]
+        status:
+          type: string
+          enum: [inactive, active, disabled]
+        config:
+          type: string
+          nullable: true
+          description: JSON-encoded non-secret client options
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    IntegrationEndpointInput:
+      type: object
+      required: [name, code, baseUrl]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        baseUrl:
+          type: string
+        authType:
+          type: string
+          enum: [none, api_key, bearer, basic]
+        config:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    IntegrationEndpointUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        baseUrl:
+          type: string
+        authType:
+          type: string
+          enum: [none, api_key, bearer, basic]
+        status:
+          type: string
+          enum: [inactive, active, disabled]
+        config:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    WebhookSubscription:
+      type: object
+      required: [id, tenantId, eventType, targetUrl, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        integrationEndpointId:
+          type: integer
+          nullable: true
+        eventType:
+          type: string
+        targetUrl:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, disabled]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WebhookSubscriptionWithSecret:
+      allOf:
+        - $ref: "#/components/schemas/WebhookSubscription"
+        - type: object
+          required: [secret]
+          properties:
+            secret:
+              type: string
+              description: HMAC signing secret, returned only once at creation
+
+    WebhookSubscriptionInput:
+      type: object
+      required: [eventType, targetUrl]
+      properties:
+        eventType:
+          type: string
+          description: An event type, or "*" to match all events
+        targetUrl:
+          type: string
+        integrationEndpointId:
+          type: integer
+          nullable: true
+
+    WebhookStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, paused, disabled]
+
+    IntegrationEvent:
+      type: object
+      required: [id, tenantId, eventType, payload, createdAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        eventType:
+          type: string
+        payload:
+          type: string
+          description: JSON-encoded event payload
+        sourceModule:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    PublishEventInput:
+      type: object
+      required: [eventType]
+      properties:
+        eventType:
+          type: string
+        payload:
+          description: Any JSON-encodable value; stored JSON-encoded
+        sourceModule:
+          type: string
+
+    PublishEventResult:
+      type: object
+      required: [event, queued]
+      properties:
+        event:
+          $ref: "#/components/schemas/IntegrationEvent"
+        queued:
+          type: integer
+          description: Number of retry-queue rows created for matching subscriptions
+
+    RetryQueueItem:
+      type: object
+      required: [id, tenantId, jobType, payload, status, attempts, maxAttempts, availableAt, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        jobType:
+          type: string
+        webhookSubscriptionId:
+          type: integer
+          nullable: true
+        integrationEventId:
+          type: integer
+          nullable: true
+        payload:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, delivered, failed, dead_letter]
+        attempts:
+          type: integer
+        maxAttempts:
+          type: integer
+        lastError:
+          type: string
+          nullable: true
+        availableAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProcessRetryQueueInput:
+      type: object
+      properties:
+        limit:
+          type: integer
+
+    ProcessRetryQueueResult:
+      type: object
+      required: [processed, delivered, failed, deadLettered]
+      properties:
+        processed:
+          type: integer
+        delivered:
+          type: integer
+        failed:
+          type: integer
+        deadLettered:
+          type: integer

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CI: "true"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable corepack (pnpm)
+        run: corepack enable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Engine tests (rules)
+        run: npx tsx tests/engines/rules.test.ts
+
+      - name: Engine tests (forms)
+        run: npx tsx tests/engines/forms.test.ts
+
+      - name: Engine tests (notifications)
+        run: npx tsx tests/engines/notifications.test.ts
+
+      - name: Engine tests (documents)
+        run: npx tsx tests/engines/documents.test.ts
+
+      - name: Engine tests (auth)
+        run: npx tsx tests/engines/auth.test.ts
+
+      - name: Build
+        # govcore's Vite build reads PORT/BASE_PATH at build time (see
+        # replit.md "Gotchas") — set placeholders so `pnpm run build`
+        # succeeds without a deployment environment.
+        env:
+          PORT: "5000"
+          BASE_PATH: "/"
+        run: pnpm run build

@@ -1,0 +1,57 @@
+name: Bug report
+description: Report something that's broken in GovCore
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. For security
+        vulnerabilities, please follow `SECURITY.md` instead of filing a
+        public issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the issue.
+      placeholder: |
+        1. Run `pnpm --filter @workspace/api-server run dev`
+        2. Call POST /api/...
+        3. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - api-server (routes/lib)
+        - db (schema/migrations)
+        - api-spec / generated clients
+        - govcore frontend
+        - engines (rules/forms/notifications/documents)
+        - CI / tooling
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / stack trace
+      description: Please redact any tenant or citizen data.
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit / branch

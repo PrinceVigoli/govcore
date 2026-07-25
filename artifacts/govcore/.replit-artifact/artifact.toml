@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "GovCore Platform"
+version = "1.0.0"
+id = "artifacts/govcore"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25926
+
+[services.development]
+run = "pnpm --filter @workspace/govcore run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/govcore", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/govcore/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25926"
+BASE_PATH = "/"

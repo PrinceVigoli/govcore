@@ -1,0 +1,12 @@
+{
+  "name": "@workspace/api-spec",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "codegen": "orval --config ./orval.config.ts && pnpm -w run typecheck:libs",
+    "codegen:check": "pnpm run codegen && git diff --exit-code -- ../api-zod/src/generated ../api-client-react/src/generated"
+  },
+  "devDependencies": {
+    "orval": "^8.22.0"
+  }
+}

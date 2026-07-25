@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a new capability or enhancement
+labels: ["enhancement", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who hits this, and what do they do today instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - api-server (routes/lib)
+        - db (schema/migrations)
+        - api-spec / generated clients
+        - govcore frontend
+        - engines (rules/forms/notifications/documents)
+        - CI / tooling
+        - other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
