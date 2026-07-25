@@ -163,7 +163,7 @@ export default function FormDetail() {
 
     // `options` and `config` are free-text JSON in the builder; parse them here
     // so a typo surfaces as a toast rather than a 400 from the server.
-    let parsedOptions: Record<string, unknown[]> = {};
+    const parsedOptions: Record<string, unknown[]> = {};
     try {
       for (const f of fields) {
         if (f.options.trim()) parsedOptions[f.fieldKey] = JSON.parse(f.options);

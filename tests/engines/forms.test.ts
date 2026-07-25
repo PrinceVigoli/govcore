@@ -14,7 +14,7 @@ function compare(actual: unknown, operator: string, expected: unknown): boolean 
   }
 }
 let pass=0,fail=0;
-const t=(n:string,a:unknown,e:unknown)=>{const ok=JSON.stringify(a)===JSON.stringify(e);ok?pass++:fail++;console.log(`${ok?'PASS':'FAIL'}  ${n}`)};
+const t=(n:string,a:unknown,e:unknown)=>{const ok=JSON.stringify(a)===JSON.stringify(e);if(ok)pass++;else fail++;console.log(`${ok?'PASS':'FAIL'}  ${n}`)};
 
 console.log('— isEmpty (drives `required`) —');
 t('undefined empty', isEmpty(undefined), true);
