@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk, useAuth } from '@clerk/react';
 import { useGetMe, getGetMeQueryKey } from '@workspace/api-client-react';
-import { LayoutTemplate, Mail, Building2, Users, Shield, LayoutGrid, ScrollText, LogOut, Loader2, Landmark, GitBranch, ListChecks, FileText, ClipboardList, Scale, Bell, FolderOpen, Search, Plug } from 'lucide-react';
+import { LayoutTemplate, Mail, Building2, Users, Shield, LayoutGrid, ScrollText, LogOut, Loader2, Landmark, GitBranch, ListChecks, FileText, ClipboardList, Scale, Bell, FolderOpen, Search, Plug, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ const navItems = [
   { name: 'Doc Templates', path: '/document-templates', icon: LayoutTemplate },
   { name: 'Search', path: '/search', icon: Search },
   { name: 'Integrations', path: '/integrations', icon: Plug },
+  { name: 'Reports', path: '/reports', icon: BarChart3 },
   { name: 'Audit Logs', path: '/audit-logs', icon: ScrollText },
 ];
 

@@ -87,10 +87,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {activity?.length === 0 && (
-                <div className="text-sm text-muted-foreground text-center py-4">No recent activity.</div>
-              )}
-              {activity?.map((log) => (
+              {(!activity || activity.length === 0) && (
+  <div className="text-sm text-muted-foreground text-center py-4">No recent activity.</div>
+)}
+{Array.isArray(activity) && activity.map((log) => (
                 <div key={log.id} className="flex items-center">
                   <div className="w-2 h-2 rounded-full bg-primary/40 mr-4 shrink-0" />
                   <div className="space-y-1 flex-1 min-w-0">

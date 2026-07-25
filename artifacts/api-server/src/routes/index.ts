@@ -27,6 +27,7 @@ import documentsRouter from "./documents";
 import attachmentsRouter from "./attachments";
 import searchRouter from "./search";
 import integrationsRouter from "./integrations";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -58,5 +59,6 @@ router.use(documentsRouter);
 router.use(attachmentsRouter);
 router.use(searchRouter);
 router.use(integrationsRouter);
+router.use(reportsRouter);
 
 export default router;

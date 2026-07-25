@@ -3291,3 +3291,350 @@ export const ProcessRetryQueueResponse = zod.object({
 })
 
 
+/**
+ * @summary The whitelisted data sources a report may be built on, with their columns
+ */
+export const ListReportSourcesResponseItem = zod.object({
+  "code": zod.string(),
+  "label": zod.string(),
+  "columns": zod.array(zod.object({
+  "key": zod.string(),
+  "type": zod.enum(['string', 'number', 'boolean', 'date', 'enum']),
+  "label": zod.string(),
+  "enumValues": zod.array(zod.string()).optional(),
+  "filterable": zod.boolean().optional(),
+  "groupable": zod.boolean().optional()
+}))
+})
+export const ListReportSourcesResponse = zod.array(ListReportSourcesResponseItem)
+
+
+/**
+ * @summary List report definitions
+ */
+export const ListReportDefinitionsQueryParams = zod.object({
+  "module": zod.coerce.string().optional(),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']).optional()
+})
+
+export const ListReportDefinitionsResponseItem = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "description": zod.string().nullish(),
+  "module": zod.string(),
+  "sourceCode": zod.string(),
+  "version": zod.number(),
+  "spec": zod.string().describe('JSON-encoded ReportSpec'),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListReportDefinitionsResponse = zod.array(ListReportDefinitionsResponseItem)
+
+
+/**
+ * @summary Create a draft report definition
+ */
+export const CreateReportDefinitionBody = zod.object({
+  "name": zod.string(),
+  "code": zod.string(),
+  "description": zod.string().optional(),
+  "module": zod.string(),
+  "sourceCode": zod.string(),
+  "spec": zod.object({
+  "columns": zod.array(zod.string()).describe('Column keys to select; empty selects all of the source\'s columns'),
+  "filters": zod.array(zod.object({
+  "column": zod.string().describe('A source column key, not a raw database column'),
+  "operator": zod.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'starts_with', 'in', 'is_null', 'is_not_null']),
+  "value": zod.unknown().optional().describe('Operand; omitted for is_null \/ is_not_null. Array for \"in\".')
+})).optional(),
+  "sort": zod.array(zod.object({
+  "column": zod.string(),
+  "direction": zod.enum(['asc', 'desc']).optional()
+})).optional(),
+  "groupBy": zod.array(zod.string()).optional(),
+  "limit": zod.number().optional()
+})
+})
+
+export const CreateReportDefinitionResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "description": zod.string().nullish(),
+  "module": zod.string(),
+  "sourceCode": zod.string(),
+  "version": zod.number(),
+  "spec": zod.string().describe('JSON-encoded ReportSpec'),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get a report definition
+ */
+export const GetReportDefinitionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetReportDefinitionResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "description": zod.string().nullish(),
+  "module": zod.string(),
+  "sourceCode": zod.string(),
+  "version": zod.number(),
+  "spec": zod.string().describe('JSON-encoded ReportSpec'),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update a draft report definition
+ */
+export const UpdateReportDefinitionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateReportDefinitionBody = zod.object({
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "spec": zod.object({
+  "columns": zod.array(zod.string()).describe('Column keys to select; empty selects all of the source\'s columns'),
+  "filters": zod.array(zod.object({
+  "column": zod.string().describe('A source column key, not a raw database column'),
+  "operator": zod.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'starts_with', 'in', 'is_null', 'is_not_null']),
+  "value": zod.unknown().optional().describe('Operand; omitted for is_null \/ is_not_null. Array for \"in\".')
+})).optional(),
+  "sort": zod.array(zod.object({
+  "column": zod.string(),
+  "direction": zod.enum(['asc', 'desc']).optional()
+})).optional(),
+  "groupBy": zod.array(zod.string()).optional(),
+  "limit": zod.number().optional()
+}).optional(),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']).optional()
+})
+
+export const UpdateReportDefinitionResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "description": zod.string().nullish(),
+  "module": zod.string(),
+  "sourceCode": zod.string(),
+  "version": zod.number(),
+  "spec": zod.string().describe('JSON-encoded ReportSpec'),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Activate a draft, snapshotting it and deprecating the prior active version
+ */
+export const PublishReportDefinitionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const PublishReportDefinitionResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "name": zod.string(),
+  "code": zod.string(),
+  "description": zod.string().nullish(),
+  "module": zod.string(),
+  "sourceCode": zod.string(),
+  "version": zod.number(),
+  "spec": zod.string().describe('JSON-encoded ReportSpec'),
+  "status": zod.enum(['draft', 'active', 'deprecated', 'archived']),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Execute a report definition and return the resulting rows
+ */
+export const RunReportDefinitionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RunReportDefinitionBody = zod.object({
+  "format": zod.enum(['json', 'csv']).optional(),
+  "parameters": zod.record(zod.string(), zod.unknown()).optional()
+})
+
+export const RunReportDefinitionResponse = zod.object({
+  "runId": zod.number(),
+  "rowCount": zod.number(),
+  "columns": zod.array(zod.string()),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+/**
+ * @summary Execution history for a report definition
+ */
+export const ListReportRunsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListReportRunsResponseItem = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "reportDefinitionId": zod.number(),
+  "reportVersionId": zod.number().nullish(),
+  "scheduledReportId": zod.number().nullish(),
+  "parameters": zod.string().nullish(),
+  "status": zod.enum(['pending', 'running', 'succeeded', 'failed']),
+  "rowCount": zod.number().nullish(),
+  "format": zod.enum(['json', 'csv']),
+  "error": zod.string().nullish(),
+  "triggeredBy": zod.enum(['manual', 'schedule']),
+  "runByUserId": zod.number().nullish(),
+  "startedAt": zod.coerce.date(),
+  "completedAt": zod.coerce.date().nullish()
+})
+export const ListReportRunsResponse = zod.array(ListReportRunsResponseItem)
+
+
+/**
+ * @summary Validate and run an unsaved spec against a source (report builder live preview)
+ */
+export const PreviewReportBody = zod.object({
+  "sourceCode": zod.string(),
+  "spec": zod.object({
+  "columns": zod.array(zod.string()).describe('Column keys to select; empty selects all of the source\'s columns'),
+  "filters": zod.array(zod.object({
+  "column": zod.string().describe('A source column key, not a raw database column'),
+  "operator": zod.enum(['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'contains', 'starts_with', 'in', 'is_null', 'is_not_null']),
+  "value": zod.unknown().optional().describe('Operand; omitted for is_null \/ is_not_null. Array for \"in\".')
+})).optional(),
+  "sort": zod.array(zod.object({
+  "column": zod.string(),
+  "direction": zod.enum(['asc', 'desc']).optional()
+})).optional(),
+  "groupBy": zod.array(zod.string()).optional(),
+  "limit": zod.number().optional()
+})
+})
+
+export const PreviewReportResponse = zod.object({
+  "valid": zod.boolean(),
+  "errors": zod.array(zod.string()),
+  "columns": zod.array(zod.string()).optional(),
+  "rows": zod.array(zod.record(zod.string(), zod.unknown())).optional()
+})
+
+
+/**
+ * @summary List scheduled reports
+ */
+export const ListScheduledReportsResponseItem = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "reportDefinitionId": zod.number(),
+  "name": zod.string(),
+  "cron": zod.string(),
+  "parameters": zod.string().nullish(),
+  "format": zod.enum(['json', 'csv']),
+  "deliverTo": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "nextRunAt": zod.coerce.date().nullish(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListScheduledReportsResponse = zod.array(ListScheduledReportsResponseItem)
+
+
+/**
+ * @summary Schedule a report definition to run on a cron
+ */
+export const CreateScheduledReportBody = zod.object({
+  "reportDefinitionId": zod.number(),
+  "name": zod.string(),
+  "cron": zod.string(),
+  "parameters": zod.record(zod.string(), zod.unknown()).optional(),
+  "format": zod.enum(['json', 'csv']).optional(),
+  "deliverTo": zod.array(zod.string()).optional()
+})
+
+export const CreateScheduledReportResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "reportDefinitionId": zod.number(),
+  "name": zod.string(),
+  "cron": zod.string(),
+  "parameters": zod.string().nullish(),
+  "format": zod.enum(['json', 'csv']),
+  "deliverTo": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "nextRunAt": zod.coerce.date().nullish(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Enable, disable, or reschedule a scheduled report
+ */
+export const UpdateScheduledReportParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateScheduledReportBody = zod.object({
+  "name": zod.string().optional(),
+  "cron": zod.string().optional(),
+  "enabled": zod.boolean().optional(),
+  "format": zod.enum(['json', 'csv']).optional()
+})
+
+export const UpdateScheduledReportResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "reportDefinitionId": zod.number(),
+  "name": zod.string(),
+  "cron": zod.string(),
+  "parameters": zod.string().nullish(),
+  "format": zod.enum(['json', 'csv']),
+  "deliverTo": zod.string().nullish(),
+  "enabled": zod.boolean(),
+  "nextRunAt": zod.coerce.date().nullish(),
+  "lastRunAt": zod.coerce.date().nullish(),
+  "createdByUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a scheduled report
+ */
+export const DeleteScheduledReportParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteScheduledReportResponse = zod.void()
+
+
