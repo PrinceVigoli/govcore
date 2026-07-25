@@ -69,8 +69,8 @@ export default function UsersList() {
   };
 
   const filteredUsers = users?.filter(u => 
-    u.firstName.toLowerCase().includes(search.toLowerCase()) || 
-    u.lastName.toLowerCase().includes(search.toLowerCase()) ||
+    (u.firstName ?? '').toLowerCase().includes(search.toLowerCase()) || 
+    (u.lastName ?? '').toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase()) ||
     u.username.toLowerCase().includes(search.toLowerCase())
   );
@@ -219,7 +219,7 @@ export default function UsersList() {
                   <TableCell>
                     <div className="flex items-center">
                       <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs mr-3 shrink-0">
-                        {user.firstName[0]}{user.lastName[0]}
+                        {(user.firstName?.[0] ?? '') || (user.email?.[0] ?? '?').toUpperCase()}{user.lastName?.[0] ?? ''}
                       </div>
                       <div>
                         <div className="font-medium text-sm">{user.firstName} {user.lastName}</div>
