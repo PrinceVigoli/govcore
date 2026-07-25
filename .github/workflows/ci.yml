@@ -37,19 +37,19 @@ jobs:
         run: pnpm run typecheck
 
       - name: Engine tests (rules)
-        run: npx tsx tests/engines/rules.test.ts
+        run: pnpm --filter scripts exec tsx ../tests/engines/rules.test.ts
 
       - name: Engine tests (forms)
-        run: npx tsx tests/engines/forms.test.ts
+        run: pnpm --filter scripts exec tsx ../tests/engines/forms.test.ts
 
       - name: Engine tests (notifications)
-        run: npx tsx tests/engines/notifications.test.ts
+        run: pnpm --filter scripts exec tsx ../tests/engines/notifications.test.ts
 
       - name: Engine tests (documents)
-        run: npx tsx tests/engines/documents.test.ts
+        run: pnpm --filter scripts exec tsx ../tests/engines/documents.test.ts
 
       - name: Engine tests (auth)
-        run: npx tsx tests/engines/auth.test.ts
+        run: pnpm --filter scripts exec tsx ../tests/engines/auth.test.ts
 
       - name: Build
         # govcore's Vite build reads PORT/BASE_PATH at build time (see
