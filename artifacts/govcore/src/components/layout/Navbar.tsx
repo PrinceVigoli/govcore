@@ -46,12 +46,14 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Link href="/login" className={`text-sm font-medium transition-colors hidden sm:block ${scrolled ? 'text-foreground hover:text-primary' : 'text-white hover:text-blue-200'}`}>
+          <Link href="/sign-in" className={`text-sm font-medium transition-colors hidden sm:block ${scrolled ? 'text-foreground hover:text-primary' : 'text-white hover:text-blue-200'}`}>
             Sign In
           </Link>
-          <Button className={`font-semibold shadow-md active-elevate hover-elevate border-none ${scrolled ? '' : 'bg-white text-blue-900 hover:bg-white/90'}`}>
-            Evaluate GovCore
-          </Button>
+          <Link href="/sign-up">
+            <Button className={`font-semibold shadow-md active-elevate hover-elevate border-none ${scrolled ? '' : 'bg-white text-blue-900 hover:bg-white/90'}`}>
+              Request Access
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
