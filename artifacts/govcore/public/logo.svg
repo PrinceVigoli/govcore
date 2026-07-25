@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="GovCore">
+  <rect width="160" height="160" rx="32" fill="#2563eb"/>
+  <path d="M80 32 42 47v31c0 26 16 43 38 50 22-7 38-24 38-50V47L80 32Z" fill="none" stroke="#fff" stroke-width="10"/>
+  <path d="m61 79 13 13 27-30" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

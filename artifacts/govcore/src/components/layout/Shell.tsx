@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { useGetMe, useLogout, getGetMeQueryKey } from '@workspace/api-client-react';
-import { getToken, removeToken } from '@/lib/auth';
+import { useClerk, useAuth } from '@clerk/react';
+import { useGetMe, getGetMeQueryKey } from '@workspace/api-client-react';
 import { LayoutTemplate, Mail, Building2, Users, Shield, LayoutGrid, ScrollText, LogOut, Loader2, Landmark, GitBranch, ListChecks, FileText, ClipboardList, Scale, Bell, FolderOpen, Search, Plug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
@@ -29,36 +29,31 @@ const navItems = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const { isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
   const { data: user, isLoading, isError } = useGetMe({
     query: {
+      enabled: isLoaded && Boolean(isSignedIn),
       retry: false,
       queryKey: getGetMeQueryKey(),
     }
   });
-  const logoutMutation = useLogout();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!getToken() || isError) {
-      removeToken();
-      if (location !== '/login') {
-        setLocation('/login');
+    if (isLoaded && (!isSignedIn || isError)) {
+      if (location !== '/sign-in') {
+        setLocation('/sign-in');
       }
     }
-  }, [isError, location, setLocation]);
+  }, [isError, isLoaded, isSignedIn, location, setLocation]);
 
   const handleLogout = async () => {
-    try {
-      await logoutMutation.mutateAsync();
-    } catch (e) {
-      // Ignore errors on logout
-    } finally {
-      removeToken();
-      setLocation('/login');
-    }
+    await signOut({ redirectUrl: basePath || '/' });
   };
 
-  if (isLoading) {
+  if (!isLoaded || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -66,7 +61,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!isSignedIn || !user) return null;
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">

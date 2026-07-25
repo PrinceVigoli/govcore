@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ClerkProvider, SignIn, SignUp, useAuth } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Redirect, Route, Switch, Router as WouterRouter } from 'wouter';
 import { Shell } from '@/components/layout/Shell';
 
-import Login from '@/pages/login';
 import Landing from '@/pages/landing';
 import Dashboard from '@/pages/dashboard';
 import TenantsList from '@/pages/tenants/list';
@@ -38,6 +39,31 @@ import IntegrationsPage from '@/pages/integrations';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+const clerkPubKey = publishableKeyFromHost(window.location.hostname, import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+function SignInPage() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+    </div>
+  );
+}
+
+function SignUpPage() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+    </div>
+  );
+}
+
+function HomeRoute() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (isLoaded && isSignedIn) return <Redirect to="/dashboard" />;
+  return <Landing />;
+}
 
 function AuthenticatedRoutes() {
   return (
@@ -80,8 +106,9 @@ function AuthenticatedRoutes() {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/login" component={Login} />
+      <Route path="/" component={HomeRoute} />
+      <Route path="/sign-in/*?" component={SignInPage} />
+      <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/verify/:uuid" component={DocumentVerify} />
       <Route component={AuthenticatedRoutes} />
     </Switch>
@@ -90,14 +117,39 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <WouterRouter base={basePath}>
+      <ClerkProvider
+        publishableKey={clerkPubKey}
+        proxyUrl={clerkProxyUrl}
+        signInUrl={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+        appearance={{
+          variables: {
+            colorPrimary: '#2563eb',
+            colorForeground: '#0f172a',
+            colorMutedForeground: '#64748b',
+            colorBackground: '#ffffff',
+            colorInput: '#f8fafc',
+            colorInputForeground: '#0f172a',
+            colorNeutral: '#cbd5e1',
+            borderRadius: '0.5rem',
+            fontFamily: 'Plus Jakarta Sans, sans-serif',
+          },
+          elements: {
+            card: 'shadow-xl border border-slate-200',
+            headerTitle: 'font-semibold text-slate-900',
+            formButtonPrimary: 'bg-blue-600 hover:bg-blue-700',
+          },
+        }}
+      >
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Router />
+            <Toaster />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ClerkProvider>
+    </WouterRouter>
   );
 }
 
