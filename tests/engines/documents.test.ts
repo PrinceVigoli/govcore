@@ -7,7 +7,8 @@ import {
 let pass = 0, fail = 0;
 const t = (name: string, actual: unknown, expected: unknown) => {
   const ok = JSON.stringify(actual) === JSON.stringify(expected);
-  ok ? pass++ : fail++;
+  if (ok) pass++;
+  else fail++;
   console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${name}`);
   if (!ok) console.log(`        expected ${JSON.stringify(expected)}\n        got      ${JSON.stringify(actual)}`);
 };
