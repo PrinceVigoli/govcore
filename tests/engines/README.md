@@ -16,8 +16,10 @@ npx tsx tests/engines/forms.test.ts
 npx tsx tests/engines/notifications.test.ts
 npx tsx tests/engines/documents.test.ts
 npx tsx tests/engines/auth.test.ts
+npx tsx tests/engines/authorization.test.ts
 npx tsx tests/engines/search.test.ts
 npx tsx tests/engines/integrations.test.ts
+npx tsx tests/engines/reports.test.ts
 ```
 
 Each exits non-zero on failure, so they work in CI as-is.
@@ -30,9 +32,11 @@ Each exits non-zero on failure, so they work in CI as-is.
 | `forms` | 11 | `isEmpty` semantics — `0` and `false` are answers, not blanks — and cross-field comparison |
 | `notifications` | 43 | Template rendering, missing-variable detection, preference precedence, retry backoff, priority ordering, status rollup |
 | `documents` | 42 | Lifecycle transitions, content hashing, path-traversal sanitization, QR verification decisions, signature staleness |
-| `auth` | 5 | JWT sign/verify round trip, tampered-signature rejection, forged-payload rejection, malformed-token rejection |
+| `auth` | 2 | Actor extraction from the request (identity is otherwise handled by Clerk, not unit-testable here) |
+| `authorization` | 51 | Path→module mapping (incl. `/api` prefix stripping, first-match ordering, ungated paths), RBAC predicate: superadmin bypass, `*` module/action wildcards, manage-implies-read asymmetry, null grants deny, fail-closed folding |
 | `search` | 23 | Tokenization, title>subtitle>content weighting, all-tokens bonus, stable tie-breaking, permission filtering (fails closed) |
 | `integrations` | 26 | Retry backoff (matches Notification Engine), retry vs dead-letter, HMAC signing, constant-time verification, tamper rejection |
+| `reports` | 64 | Spec compiler: source/column whitelisting, unconditional tenant scoping, full parameterization (no inlined operands), enum validation, grouping; CSV RFC-4180 quoting; cron validation/matching/next-fire |
 
 ## Invariants worth keeping
 
@@ -55,6 +59,21 @@ Several tests exist because the behaviour is easy to break and hard to notice:
   leave the new version unsigned rather than inheriting the old approval.
 - **Search permissions fail closed.** A user with no matching role/permission
   rows sees zero results, never everything.
+- **`manage` implies `read`, but `read` never implies `manage`.** A read-only
+  grant must not satisfy a write action — the asymmetry is the whole point of
+  the split, and getting it backwards is a write-access hole.
+- **Authorization fails closed too.** A user with no grants, or grants that
+  don't match, is denied. Only an explicit match (or a superadmin role, or a
+  `*` wildcard) permits.
+- **A report can only touch a whitelisted source and its declared columns.**
+  The compiler rejects any column not on the chosen source, always ANDs in
+  `tenant_id = $N` from the caller (never from the spec), and binds every
+  filter operand as a parameter — so user-supplied report config can't reach an
+  arbitrary table, skip tenant scoping, or inject SQL. This is the single most
+  important thing the `reports` suite guards.
+- **`moduleForPath` only strips a leading `/api` segment**, not a substring —
+  `/apidocs` is not `/docs`. A wrong path→module mapping guards a route with
+  the wrong permissions, or none.
 - **Webhook signatures verify in constant time and never throw.** A receiver
   handed a malformed signature gets `false`, not a crash — and timing can't be
   used to guess the signature byte-by-byte.

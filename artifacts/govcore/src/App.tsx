@@ -36,6 +36,8 @@ import DocumentVerify from '@/pages/documents/verify';
 import DocumentTemplatesList from '@/pages/document-templates/list';
 import SearchPage from '@/pages/search';
 import IntegrationsPage from '@/pages/integrations';
+import ReportsList from '@/pages/reports/list';
+import ReportDetail from '@/pages/reports/detail';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
@@ -97,6 +99,8 @@ function AuthenticatedRoutes() {
         <Route path="/documents/:id" component={DocumentDetail} />
         <Route path="/search" component={SearchPage} />
         <Route path="/integrations" component={IntegrationsPage} />
+        <Route path="/reports" component={ReportsList} />
+        <Route path="/reports/:id" component={ReportDetail} />
         <Route component={NotFound} />
       </Switch>
     </Shell>

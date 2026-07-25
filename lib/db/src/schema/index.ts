@@ -42,3 +42,7 @@ export * from "./integrationEndpoints";
 export * from "./webhookSubscriptions";
 export * from "./integrationEvents";
 export * from "./integrationRetryQueue";
+export * from "./reportDefinitions";
+export * from "./reportVersions";
+export * from "./reportRuns";
+export * from "./scheduledReports";

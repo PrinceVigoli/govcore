@@ -187,6 +187,9 @@ importers:
       '@workspace/integration-engine':
         specifier: workspace:*
         version: link:../../lib/integration-engine
+      '@workspace/report-engine':
+        specifier: workspace:*
+        version: link:../../lib/report-engine
       '@workspace/search':
         specifier: workspace:*
         version: link:../../lib/search
@@ -239,9 +242,6 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.5
-      dotenv-cli:
-        specifier: ^11.0.0
-        version: 11.0.0
       esbuild:
         specifier: 0.27.3
         version: 0.27.3
@@ -684,6 +684,19 @@ importers:
         version: 0.31.10
 
   lib/integration-engine:
+    dependencies:
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@types/pg@8.20.0)(pg@8.22.0)
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.5
+
+  lib/report-engine:
     dependencies:
       '@workspace/db':
         specifier: workspace:*

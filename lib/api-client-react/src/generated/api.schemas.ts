@@ -2089,6 +2089,272 @@ export interface ProcessRetryQueueResult {
   deadLettered: number;
 }
 
+export type ReportSourceColumnType = typeof ReportSourceColumnType[keyof typeof ReportSourceColumnType];
+
+
+export const ReportSourceColumnType = {
+  string: 'string',
+  number: 'number',
+  boolean: 'boolean',
+  date: 'date',
+  enum: 'enum',
+} as const;
+
+export interface ReportSourceColumn {
+  key: string;
+  type: ReportSourceColumnType;
+  label: string;
+  enumValues?: string[];
+  filterable?: boolean;
+  groupable?: boolean;
+}
+
+export interface ReportSource {
+  code: string;
+  label: string;
+  columns: ReportSourceColumn[];
+}
+
+export type ReportFilterOperator = typeof ReportFilterOperator[keyof typeof ReportFilterOperator];
+
+
+export const ReportFilterOperator = {
+  eq: 'eq',
+  neq: 'neq',
+  gt: 'gt',
+  gte: 'gte',
+  lt: 'lt',
+  lte: 'lte',
+  contains: 'contains',
+  starts_with: 'starts_with',
+  in: 'in',
+  is_null: 'is_null',
+  is_not_null: 'is_not_null',
+} as const;
+
+export interface ReportFilter {
+  /** A source column key, not a raw database column */
+  column: string;
+  operator: ReportFilterOperator;
+  /** Operand; omitted for is_null / is_not_null. Array for "in". */
+  value?: unknown;
+}
+
+export type ReportSortDirection = typeof ReportSortDirection[keyof typeof ReportSortDirection];
+
+
+export const ReportSortDirection = {
+  asc: 'asc',
+  desc: 'desc',
+} as const;
+
+export interface ReportSort {
+  column: string;
+  direction?: ReportSortDirection;
+}
+
+export interface ReportSpec {
+  /** Column keys to select; empty selects all of the source's columns */
+  columns: string[];
+  filters?: ReportFilter[];
+  sort?: ReportSort[];
+  groupBy?: string[];
+  limit?: number;
+}
+
+export type ReportDefinitionStatus = typeof ReportDefinitionStatus[keyof typeof ReportDefinitionStatus];
+
+
+export const ReportDefinitionStatus = {
+  draft: 'draft',
+  active: 'active',
+  deprecated: 'deprecated',
+  archived: 'archived',
+} as const;
+
+export interface ReportDefinition {
+  id: number;
+  tenantId: number;
+  name: string;
+  code: string;
+  description?: string | null;
+  module: string;
+  sourceCode: string;
+  version: number;
+  /** JSON-encoded ReportSpec */
+  spec: string;
+  status: ReportDefinitionStatus;
+  createdByUserId?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReportDefinitionInput {
+  name: string;
+  code: string;
+  description?: string;
+  module: string;
+  sourceCode: string;
+  spec: ReportSpec;
+}
+
+export type ReportDefinitionUpdateStatus = typeof ReportDefinitionUpdateStatus[keyof typeof ReportDefinitionUpdateStatus];
+
+
+export const ReportDefinitionUpdateStatus = {
+  draft: 'draft',
+  active: 'active',
+  deprecated: 'deprecated',
+  archived: 'archived',
+} as const;
+
+export interface ReportDefinitionUpdate {
+  name?: string;
+  description?: string;
+  spec?: ReportSpec;
+  status?: ReportDefinitionUpdateStatus;
+}
+
+export type RunReportInputFormat = typeof RunReportInputFormat[keyof typeof RunReportInputFormat];
+
+
+export const RunReportInputFormat = {
+  json: 'json',
+  csv: 'csv',
+} as const;
+
+export type RunReportInputParameters = { [key: string]: unknown };
+
+export interface RunReportInput {
+  format?: RunReportInputFormat;
+  parameters?: RunReportInputParameters;
+}
+
+export type ReportRunResultRowsItem = { [key: string]: unknown };
+
+export interface ReportRunResult {
+  runId: number;
+  rowCount: number;
+  columns: string[];
+  rows: ReportRunResultRowsItem[];
+}
+
+export type ReportRunStatus = typeof ReportRunStatus[keyof typeof ReportRunStatus];
+
+
+export const ReportRunStatus = {
+  pending: 'pending',
+  running: 'running',
+  succeeded: 'succeeded',
+  failed: 'failed',
+} as const;
+
+export type ReportRunFormat = typeof ReportRunFormat[keyof typeof ReportRunFormat];
+
+
+export const ReportRunFormat = {
+  json: 'json',
+  csv: 'csv',
+} as const;
+
+export type ReportRunTriggeredBy = typeof ReportRunTriggeredBy[keyof typeof ReportRunTriggeredBy];
+
+
+export const ReportRunTriggeredBy = {
+  manual: 'manual',
+  schedule: 'schedule',
+} as const;
+
+export interface ReportRun {
+  id: number;
+  tenantId: number;
+  reportDefinitionId: number;
+  reportVersionId?: number | null;
+  scheduledReportId?: number | null;
+  parameters?: string | null;
+  status: ReportRunStatus;
+  rowCount?: number | null;
+  format: ReportRunFormat;
+  error?: string | null;
+  triggeredBy: ReportRunTriggeredBy;
+  runByUserId?: number | null;
+  startedAt: string;
+  completedAt?: string | null;
+}
+
+export interface ReportPreviewInput {
+  sourceCode: string;
+  spec: ReportSpec;
+}
+
+export type ReportPreviewResultRowsItem = { [key: string]: unknown };
+
+export interface ReportPreviewResult {
+  valid: boolean;
+  errors: string[];
+  columns?: string[];
+  rows?: ReportPreviewResultRowsItem[];
+}
+
+export type ScheduledReportFormat = typeof ScheduledReportFormat[keyof typeof ScheduledReportFormat];
+
+
+export const ScheduledReportFormat = {
+  json: 'json',
+  csv: 'csv',
+} as const;
+
+export interface ScheduledReport {
+  id: number;
+  tenantId: number;
+  reportDefinitionId: number;
+  name: string;
+  cron: string;
+  parameters?: string | null;
+  format: ScheduledReportFormat;
+  deliverTo?: string | null;
+  enabled: boolean;
+  nextRunAt?: string | null;
+  lastRunAt?: string | null;
+  createdByUserId?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ScheduledReportInputParameters = { [key: string]: unknown };
+
+export type ScheduledReportInputFormat = typeof ScheduledReportInputFormat[keyof typeof ScheduledReportInputFormat];
+
+
+export const ScheduledReportInputFormat = {
+  json: 'json',
+  csv: 'csv',
+} as const;
+
+export interface ScheduledReportInput {
+  reportDefinitionId: number;
+  name: string;
+  cron: string;
+  parameters?: ScheduledReportInputParameters;
+  format?: ScheduledReportInputFormat;
+  deliverTo?: string[];
+}
+
+export type ScheduledReportUpdateFormat = typeof ScheduledReportUpdateFormat[keyof typeof ScheduledReportUpdateFormat];
+
+
+export const ScheduledReportUpdateFormat = {
+  json: 'json',
+  csv: 'csv',
+} as const;
+
+export interface ScheduledReportUpdate {
+  name?: string;
+  cron?: string;
+  enabled?: boolean;
+  format?: ScheduledReportUpdateFormat;
+}
+
 export type ListDepartmentsParams = {
 tenantId?: number;
 };
@@ -2287,5 +2553,20 @@ export const ListRetryQueueStatus = {
   delivered: 'delivered',
   failed: 'failed',
   dead_letter: 'dead_letter',
+} as const;
+
+export type ListReportDefinitionsParams = {
+module?: string;
+status?: ListReportDefinitionsStatus;
+};
+
+export type ListReportDefinitionsStatus = typeof ListReportDefinitionsStatus[keyof typeof ListReportDefinitionsStatus];
+
+
+export const ListReportDefinitionsStatus = {
+  draft: 'draft',
+  active: 'active',
+  deprecated: 'deprecated',
+  archived: 'archived',
 } as const;
 

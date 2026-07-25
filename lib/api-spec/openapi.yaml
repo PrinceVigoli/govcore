@@ -2642,6 +2642,283 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProcessRetryQueueResult"
 
+  /report-sources:
+    get:
+      operationId: listReportSources
+      tags: [reports]
+      summary: The whitelisted data sources a report may be built on, with their columns
+      responses:
+        "200":
+          description: Available data sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportSource"
+
+  /report-definitions:
+    get:
+      operationId: listReportDefinitions
+      tags: [reports]
+      summary: List report definitions
+      parameters:
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, deprecated, archived]
+      responses:
+        "200":
+          description: Report definitions for the caller's tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportDefinition"
+    post:
+      operationId: createReportDefinition
+      tags: [reports]
+      summary: Create a draft report definition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportDefinitionInput"
+      responses:
+        "201":
+          description: Draft created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDefinition"
+        "400":
+          description: Invalid spec or unknown source
+
+  /report-definitions/{id}:
+    get:
+      operationId: getReportDefinition
+      tags: [reports]
+      summary: Get a report definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The definition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDefinition"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateReportDefinition
+      tags: [reports]
+      summary: Update a draft report definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportDefinitionUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDefinition"
+        "400":
+          description: Invalid spec
+        "404":
+          description: Not found
+        "409":
+          description: Only draft definitions can be edited
+
+  /report-definitions/{id}/publish:
+    post:
+      operationId: publishReportDefinition
+      tags: [reports]
+      summary: Activate a draft, snapshotting it and deprecating the prior active version
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportDefinition"
+        "400":
+          description: Spec no longer valid
+        "404":
+          description: Not found
+
+  /report-definitions/{id}/run:
+    post:
+      operationId: runReportDefinition
+      tags: [reports]
+      summary: Execute a report definition and return the resulting rows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunReportInput"
+      responses:
+        "200":
+          description: The report result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportRunResult"
+        "404":
+          description: Not found
+
+  /report-definitions/{id}/runs:
+    get:
+      operationId: listReportRuns
+      tags: [reports]
+      summary: Execution history for a report definition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Runs, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportRun"
+
+  /report-preview:
+    post:
+      operationId: previewReport
+      tags: [reports]
+      summary: Validate and run an unsaved spec against a source (report builder live preview)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportPreviewInput"
+      responses:
+        "200":
+          description: Validation result and, if valid, a bounded row sample
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportPreviewResult"
+
+  /scheduled-reports:
+    get:
+      operationId: listScheduledReports
+      tags: [reports]
+      summary: List scheduled reports
+      responses:
+        "200":
+          description: Schedules for the caller's tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduledReport"
+    post:
+      operationId: createScheduledReport
+      tags: [reports]
+      summary: Schedule a report definition to run on a cron
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledReportInput"
+      responses:
+        "201":
+          description: Schedule created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledReport"
+        "400":
+          description: Invalid cron or unknown definition
+
+  /scheduled-reports/{id}:
+    patch:
+      operationId: updateScheduledReport
+      tags: [reports]
+      summary: Enable, disable, or reschedule a scheduled report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledReportUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledReport"
+        "400":
+          description: Invalid cron
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteScheduledReport
+      tags: [reports]
+      summary: Delete a scheduled report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -5232,3 +5509,329 @@ components:
           type: integer
         deadLettered:
           type: integer
+
+    ReportSourceColumn:
+      type: object
+      required: [key, type, label]
+      properties:
+        key:
+          type: string
+        type:
+          type: string
+          enum: [string, number, boolean, date, enum]
+        label:
+          type: string
+        enumValues:
+          type: array
+          items:
+            type: string
+        filterable:
+          type: boolean
+        groupable:
+          type: boolean
+
+    ReportSource:
+      type: object
+      required: [code, label, columns]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportSourceColumn"
+
+    ReportFilter:
+      type: object
+      required: [column, operator]
+      properties:
+        column:
+          type: string
+          description: A source column key, not a raw database column
+        operator:
+          type: string
+          enum: [eq, neq, gt, gte, lt, lte, contains, starts_with, in, is_null, is_not_null]
+        value:
+          description: Operand; omitted for is_null / is_not_null. Array for "in".
+
+    ReportSort:
+      type: object
+      required: [column]
+      properties:
+        column:
+          type: string
+        direction:
+          type: string
+          enum: [asc, desc]
+
+    ReportSpec:
+      type: object
+      required: [columns]
+      properties:
+        columns:
+          type: array
+          description: Column keys to select; empty selects all of the source's columns
+          items:
+            type: string
+        filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportFilter"
+        sort:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportSort"
+        groupBy:
+          type: array
+          items:
+            type: string
+        limit:
+          type: integer
+
+    ReportDefinition:
+      type: object
+      required: [id, tenantId, name, code, module, sourceCode, version, spec, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+          nullable: true
+        module:
+          type: string
+        sourceCode:
+          type: string
+        version:
+          type: integer
+        spec:
+          type: string
+          description: JSON-encoded ReportSpec
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+        createdByUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ReportDefinitionInput:
+      type: object
+      required: [name, code, module, sourceCode, spec]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        module:
+          type: string
+        sourceCode:
+          type: string
+        spec:
+          $ref: "#/components/schemas/ReportSpec"
+
+    ReportDefinitionUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        spec:
+          $ref: "#/components/schemas/ReportSpec"
+        status:
+          type: string
+          enum: [draft, active, deprecated, archived]
+
+    RunReportInput:
+      type: object
+      properties:
+        format:
+          type: string
+          enum: [json, csv]
+        parameters:
+          type: object
+          additionalProperties: true
+
+    ReportRunResult:
+      type: object
+      required: [runId, rowCount, columns, rows]
+      properties:
+        runId:
+          type: integer
+        rowCount:
+          type: integer
+        columns:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    ReportRun:
+      type: object
+      required: [id, tenantId, reportDefinitionId, status, format, triggeredBy, startedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        reportDefinitionId:
+          type: integer
+        reportVersionId:
+          type: integer
+          nullable: true
+        scheduledReportId:
+          type: integer
+          nullable: true
+        parameters:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, running, succeeded, failed]
+        rowCount:
+          type: integer
+          nullable: true
+        format:
+          type: string
+          enum: [json, csv]
+        error:
+          type: string
+          nullable: true
+        triggeredBy:
+          type: string
+          enum: [manual, schedule]
+        runByUserId:
+          type: integer
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReportPreviewInput:
+      type: object
+      required: [sourceCode, spec]
+      properties:
+        sourceCode:
+          type: string
+        spec:
+          $ref: "#/components/schemas/ReportSpec"
+
+    ReportPreviewResult:
+      type: object
+      required: [valid, errors]
+      properties:
+        valid:
+          type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+        columns:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+
+    ScheduledReport:
+      type: object
+      required: [id, tenantId, reportDefinitionId, name, cron, format, enabled, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        reportDefinitionId:
+          type: integer
+        name:
+          type: string
+        cron:
+          type: string
+        parameters:
+          type: string
+          nullable: true
+        format:
+          type: string
+          enum: [json, csv]
+        deliverTo:
+          type: string
+          nullable: true
+        enabled:
+          type: boolean
+        nextRunAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastRunAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdByUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ScheduledReportInput:
+      type: object
+      required: [reportDefinitionId, name, cron]
+      properties:
+        reportDefinitionId:
+          type: integer
+        name:
+          type: string
+        cron:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+        format:
+          type: string
+          enum: [json, csv]
+        deliverTo:
+          type: array
+          items:
+            type: string
+
+    ScheduledReportUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        cron:
+          type: string
+        enabled:
+          type: boolean
+        format:
+          type: string
+          enum: [json, csv]

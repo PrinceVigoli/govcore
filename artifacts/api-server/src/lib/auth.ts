@@ -11,6 +11,7 @@ import {
   permissionsTable,
 } from "@workspace/db";
 import { logger } from "./logger";
+import { moduleForPath, anyGrantPermits } from "./authorization";
 
 export interface JwtPayload {
   userId: number;
@@ -26,19 +27,6 @@ function actorOf(req: Request): JwtPayload {
   return (req as AuthenticatedRequest).user;
 }
 
-function moduleForPath(path: string): string | null {
-  path = path.replace(/^\/api(?=\/|$)/, "");
-  if (/^\/(tenants|users|roles|permissions|departments|audit-logs|identity)/.test(path)) return "identity";
-  if (/^\/workflows|^\/workflow-/.test(path)) return "workflows";
-  if (/^\/rules/.test(path)) return "rules";
-  if (/^\/forms|^\/form-submissions/.test(path)) return "forms";
-  if (/^\/notifications|^\/notification-templates/.test(path)) return "notifications";
-  if (/^\/documents|^\/document-templates/.test(path)) return "documents";
-  if (/^\/search/.test(path)) return "search";
-  if (/^\/integrations/.test(path)) return "integrations";
-  return null;
-}
-
 async function hasPermission(userId: number, module: string, action: "read" | "manage"): Promise<boolean> {
   const rows = await db
     .select({ roleCode: rolesTable.code, permissionModule: permissionsTable.module, permissionAction: permissionsTable.action })
@@ -48,14 +36,7 @@ async function hasPermission(userId: number, module: string, action: "read" | "m
     .leftJoin(permissionsTable, eq(rolePermissionsTable.permissionId, permissionsTable.id))
     .where(eq(userRolesTable.userId, userId));
 
-  return rows.some((row) => {
-    if (["platform_admin", "system_admin", "super_admin"].includes(row.roleCode)) return true;
-    if (!row.permissionModule || !row.permissionAction) return false;
-    return (
-      (row.permissionModule === module || row.permissionModule === "*") &&
-      (row.permissionAction === action || row.permissionAction === "manage" || row.permissionAction === "*")
-    );
-  });
+  return anyGrantPermits(rows, module, action);
 }
 
 async function ensureGovCoreUser(clerkUserId: string, email: string, firstName: string, lastName: string) {
