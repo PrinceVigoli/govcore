@@ -100,7 +100,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center min-w-0">
               <div className="h-8 w-8 rounded-full bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold text-xs">
-                {user.firstName[0]}{user.lastName[0]}
+                {user.firstName?.[0] ?? '?'}{user.lastName?.[0] ?? ''}
               </div>
               <div className="ml-3 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">
