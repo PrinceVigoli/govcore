@@ -34,11 +34,11 @@ export function setBaseUrl(url: string | null): void {
  * the getter is invoked; when it returns a non-null string, an
  * `Authorization: Bearer <token>` header is attached to the request.
  *
- * Useful for Expo bundles making token-gated API calls.
- * Pass `null` to clear the getter.
- *
- * NOTE: This function should never be used in web applications where session
- * token cookies are automatically associated with API calls by the browser.
+ * Useful for Expo bundles making token-gated API calls, and for the web app
+ * when the API server lives on a different origin/port than the frontend
+ * (e.g. local dev with Vite on :5173 and Express on :3001), since Clerk's
+ * session isn't automatically readable by a separate backend without an
+ * explicit Bearer token.
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
