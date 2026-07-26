@@ -12,6 +12,8 @@ import Landing from '@/pages/landing';
 import Dashboard from '@/pages/dashboard';
 import TenantsList from '@/pages/tenants/list';
 import TenantDetail from '@/pages/tenants/detail';
+import DepartmentsList from '@/pages/departments/list';
+import AuditLogsList from '@/pages/audit-logs/list';
 import UsersList from '@/pages/users/list';
 import UserDetail from '@/pages/users/detail';
 import RolesList from '@/pages/roles/list';
@@ -76,6 +78,8 @@ function AuthenticatedRoutes() {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/tenants" component={TenantsList} />
         <Route path="/tenants/:id" component={TenantDetail} />
+        <Route path="/departments" component={DepartmentsList} />
+        <Route path="/audit-logs" component={AuditLogsList} />
         <Route path="/users" component={UsersList} />
         <Route path="/users/:id" component={UserDetail} />
         <Route path="/roles" component={RolesList} />
