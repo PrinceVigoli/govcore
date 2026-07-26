@@ -123,18 +123,14 @@ async function enforceTenantRecord(req: Request, actor: JwtPayload): Promise<boo
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-  console.time("[diag] getAuth");
   try {
     const { userId: clerkUserId } = getAuth(req);
-    console.timeEnd("[diag] getAuth");
     if (!clerkUserId) {
       res.status(401).json({ error: "Not authenticated" });
       return;
     }
 
-    console.time("[diag] clerkClient.users.getUser");
     const clerkUser = await clerkClient.users.getUser(clerkUserId);
-    console.timeEnd("[diag] clerkClient.users.getUser");
     const email = clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress;
     if (!email) {
       res.status(403).json({ error: "Your account needs a verified email address" });
