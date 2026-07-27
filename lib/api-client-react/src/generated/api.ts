@@ -77,6 +77,7 @@ import type {
   ListRolesParams,
   ListRulesParams,
   ListSearchableEntityTypes200,
+  ListSyncConflictsParams,
   ListUsersParams,
   ListWorkflowDefinitionsParams,
   ListWorkflowInstancesParams,
@@ -132,6 +133,19 @@ import type {
   ScheduledReportInput,
   ScheduledReportUpdate,
   SearchParams,
+  SyncConflict,
+  SyncConflictResolution,
+  SyncEntity,
+  SyncEntityInput,
+  SyncEntityUpdate,
+  SyncNode,
+  SyncNodeInput,
+  SyncNodeStatus,
+  SyncNodeUpdate,
+  SyncPullInput,
+  SyncPullResult,
+  SyncPushInput,
+  SyncPushResult,
   Tenant,
   TenantInput,
   TenantUpdate,
@@ -10100,5 +10114,743 @@ export const useDeleteScheduledReport = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteScheduledReportMutationOptions(options));
+    }
+
+export const getListSyncEntitiesUrl = () => {
+
+
+
+
+  return `/api/sync-entities`
+}
+
+/**
+ * @summary Entity types registered for synchronization, with their conflict policies
+ */
+export const listSyncEntities = async ( options?: RequestInit): Promise<SyncEntity[]> => {
+
+  return customFetch<SyncEntity[]>(getListSyncEntitiesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSyncEntitiesQueryKey = () => {
+    return [
+    `/api/sync-entities`
+    ] as const;
+    }
+
+
+export const getListSyncEntitiesQueryOptions = <TData = Awaited<ReturnType<typeof listSyncEntities>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSyncEntities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSyncEntitiesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSyncEntities>>> = ({ signal }) => listSyncEntities({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSyncEntities>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSyncEntitiesQueryResult = NonNullable<Awaited<ReturnType<typeof listSyncEntities>>>
+export type ListSyncEntitiesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Entity types registered for synchronization, with their conflict policies
+ */
+
+export function useListSyncEntities<TData = Awaited<ReturnType<typeof listSyncEntities>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSyncEntities>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSyncEntitiesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegisterSyncEntityUrl = () => {
+
+
+
+
+  return `/api/sync-entities`
+}
+
+/**
+ * @summary Register an entity type for sync and set how its conflicts resolve
+ */
+export const registerSyncEntity = async (syncEntityInput: SyncEntityInput, options?: RequestInit): Promise<SyncEntity> => {
+
+  return customFetch<SyncEntity>(getRegisterSyncEntityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncEntityInput)
+  }
+);}
+
+
+
+
+
+export const getRegisterSyncEntityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerSyncEntity>>, TError,{data: BodyType<SyncEntityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerSyncEntity>>, TError,{data: BodyType<SyncEntityInput>}, TContext> => {
+
+const mutationKey = ['registerSyncEntity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerSyncEntity>>, {data: BodyType<SyncEntityInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerSyncEntity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterSyncEntityMutationResult = NonNullable<Awaited<ReturnType<typeof registerSyncEntity>>>
+    export type RegisterSyncEntityMutationBody = BodyType<SyncEntityInput>
+    export type RegisterSyncEntityMutationError = ErrorType<void>
+
+    /**
+ * @summary Register an entity type for sync and set how its conflicts resolve
+ */
+export const useRegisterSyncEntity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerSyncEntity>>, TError,{data: BodyType<SyncEntityInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerSyncEntity>>,
+        TError,
+        {data: BodyType<SyncEntityInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterSyncEntityMutationOptions(options));
+    }
+
+export const getUpdateSyncEntityUrl = (id: number,) => {
+
+
+
+
+  return `/api/sync-entities/${id}`
+}
+
+/**
+ * @summary Change an entity's conflict policy or enable/disable its sync
+ */
+export const updateSyncEntity = async (id: number,
+    syncEntityUpdate: SyncEntityUpdate, options?: RequestInit): Promise<SyncEntity> => {
+
+  return customFetch<SyncEntity>(getUpdateSyncEntityUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncEntityUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSyncEntityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSyncEntity>>, TError,{id: number;data: BodyType<SyncEntityUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSyncEntity>>, TError,{id: number;data: BodyType<SyncEntityUpdate>}, TContext> => {
+
+const mutationKey = ['updateSyncEntity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSyncEntity>>, {id: number;data: BodyType<SyncEntityUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSyncEntity(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSyncEntityMutationResult = NonNullable<Awaited<ReturnType<typeof updateSyncEntity>>>
+    export type UpdateSyncEntityMutationBody = BodyType<SyncEntityUpdate>
+    export type UpdateSyncEntityMutationError = ErrorType<void>
+
+    /**
+ * @summary Change an entity's conflict policy or enable/disable its sync
+ */
+export const useUpdateSyncEntity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSyncEntity>>, TError,{id: number;data: BodyType<SyncEntityUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSyncEntity>>,
+        TError,
+        {id: number;data: BodyType<SyncEntityUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSyncEntityMutationOptions(options));
+    }
+
+export const getListSyncNodesUrl = () => {
+
+
+
+
+  return `/api/sync-nodes`
+}
+
+/**
+ * @summary Registered nodes with their sync lag
+ */
+export const listSyncNodes = async ( options?: RequestInit): Promise<SyncNodeStatus[]> => {
+
+  return customFetch<SyncNodeStatus[]>(getListSyncNodesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSyncNodesQueryKey = () => {
+    return [
+    `/api/sync-nodes`
+    ] as const;
+    }
+
+
+export const getListSyncNodesQueryOptions = <TData = Awaited<ReturnType<typeof listSyncNodes>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSyncNodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSyncNodesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSyncNodes>>> = ({ signal }) => listSyncNodes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSyncNodes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSyncNodesQueryResult = NonNullable<Awaited<ReturnType<typeof listSyncNodes>>>
+export type ListSyncNodesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Registered nodes with their sync lag
+ */
+
+export function useListSyncNodes<TData = Awaited<ReturnType<typeof listSyncNodes>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSyncNodes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSyncNodesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRegisterSyncNodeUrl = () => {
+
+
+
+
+  return `/api/sync-nodes`
+}
+
+/**
+ * @summary Register a GovCore Node
+ */
+export const registerSyncNode = async (syncNodeInput: SyncNodeInput, options?: RequestInit): Promise<SyncNode> => {
+
+  return customFetch<SyncNode>(getRegisterSyncNodeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncNodeInput)
+  }
+);}
+
+
+
+
+
+export const getRegisterSyncNodeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerSyncNode>>, TError,{data: BodyType<SyncNodeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerSyncNode>>, TError,{data: BodyType<SyncNodeInput>}, TContext> => {
+
+const mutationKey = ['registerSyncNode'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerSyncNode>>, {data: BodyType<SyncNodeInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerSyncNode(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterSyncNodeMutationResult = NonNullable<Awaited<ReturnType<typeof registerSyncNode>>>
+    export type RegisterSyncNodeMutationBody = BodyType<SyncNodeInput>
+    export type RegisterSyncNodeMutationError = ErrorType<void>
+
+    /**
+ * @summary Register a GovCore Node
+ */
+export const useRegisterSyncNode = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerSyncNode>>, TError,{data: BodyType<SyncNodeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerSyncNode>>,
+        TError,
+        {data: BodyType<SyncNodeInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterSyncNodeMutationOptions(options));
+    }
+
+export const getUpdateSyncNodeUrl = (id: number,) => {
+
+
+
+
+  return `/api/sync-nodes/${id}`
+}
+
+/**
+ * @summary Rename a node or change its status
+ */
+export const updateSyncNode = async (id: number,
+    syncNodeUpdate: SyncNodeUpdate, options?: RequestInit): Promise<SyncNode> => {
+
+  return customFetch<SyncNode>(getUpdateSyncNodeUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncNodeUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateSyncNodeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSyncNode>>, TError,{id: number;data: BodyType<SyncNodeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSyncNode>>, TError,{id: number;data: BodyType<SyncNodeUpdate>}, TContext> => {
+
+const mutationKey = ['updateSyncNode'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSyncNode>>, {id: number;data: BodyType<SyncNodeUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSyncNode(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSyncNodeMutationResult = NonNullable<Awaited<ReturnType<typeof updateSyncNode>>>
+    export type UpdateSyncNodeMutationBody = BodyType<SyncNodeUpdate>
+    export type UpdateSyncNodeMutationError = ErrorType<void>
+
+    /**
+ * @summary Rename a node or change its status
+ */
+export const useUpdateSyncNode = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSyncNode>>, TError,{id: number;data: BodyType<SyncNodeUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSyncNode>>,
+        TError,
+        {id: number;data: BodyType<SyncNodeUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateSyncNodeMutationOptions(options));
+    }
+
+export const getPullSyncChangesUrl = () => {
+
+
+
+
+  return `/api/sync/pull`
+}
+
+/**
+ * @summary Fetch the next batch of changes for a node and advance its cursor
+ */
+export const pullSyncChanges = async (syncPullInput: SyncPullInput, options?: RequestInit): Promise<SyncPullResult> => {
+
+  return customFetch<SyncPullResult>(getPullSyncChangesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncPullInput)
+  }
+);}
+
+
+
+
+
+export const getPullSyncChangesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pullSyncChanges>>, TError,{data: BodyType<SyncPullInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof pullSyncChanges>>, TError,{data: BodyType<SyncPullInput>}, TContext> => {
+
+const mutationKey = ['pullSyncChanges'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pullSyncChanges>>, {data: BodyType<SyncPullInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  pullSyncChanges(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PullSyncChangesMutationResult = NonNullable<Awaited<ReturnType<typeof pullSyncChanges>>>
+    export type PullSyncChangesMutationBody = BodyType<SyncPullInput>
+    export type PullSyncChangesMutationError = ErrorType<void>
+
+    /**
+ * @summary Fetch the next batch of changes for a node and advance its cursor
+ */
+export const usePullSyncChanges = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pullSyncChanges>>, TError,{data: BodyType<SyncPullInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof pullSyncChanges>>,
+        TError,
+        {data: BodyType<SyncPullInput>},
+        TContext
+      > => {
+      return useMutation(getPullSyncChangesMutationOptions(options));
+    }
+
+export const getPushSyncChangesUrl = () => {
+
+
+
+
+  return `/api/sync/push`
+}
+
+/**
+ * @summary Submit offline changes from a node for reconciliation
+ */
+export const pushSyncChanges = async (syncPushInput: SyncPushInput, options?: RequestInit): Promise<SyncPushResult> => {
+
+  return customFetch<SyncPushResult>(getPushSyncChangesUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncPushInput)
+  }
+);}
+
+
+
+
+
+export const getPushSyncChangesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pushSyncChanges>>, TError,{data: BodyType<SyncPushInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof pushSyncChanges>>, TError,{data: BodyType<SyncPushInput>}, TContext> => {
+
+const mutationKey = ['pushSyncChanges'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pushSyncChanges>>, {data: BodyType<SyncPushInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  pushSyncChanges(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PushSyncChangesMutationResult = NonNullable<Awaited<ReturnType<typeof pushSyncChanges>>>
+    export type PushSyncChangesMutationBody = BodyType<SyncPushInput>
+    export type PushSyncChangesMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit offline changes from a node for reconciliation
+ */
+export const usePushSyncChanges = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pushSyncChanges>>, TError,{data: BodyType<SyncPushInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof pushSyncChanges>>,
+        TError,
+        {data: BodyType<SyncPushInput>},
+        TContext
+      > => {
+      return useMutation(getPushSyncChangesMutationOptions(options));
+    }
+
+export const getListSyncConflictsUrl = (params?: ListSyncConflictsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/sync-conflicts?${stringifiedParams}` : `/api/sync-conflicts`
+}
+
+/**
+ * @summary Conflicts, optionally filtered by status
+ */
+export const listSyncConflicts = async (params?: ListSyncConflictsParams, options?: RequestInit): Promise<SyncConflict[]> => {
+
+  return customFetch<SyncConflict[]>(getListSyncConflictsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSyncConflictsQueryKey = (params?: ListSyncConflictsParams,) => {
+    return [
+    `/api/sync-conflicts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSyncConflictsQueryOptions = <TData = Awaited<ReturnType<typeof listSyncConflicts>>, TError = ErrorType<unknown>>(params?: ListSyncConflictsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSyncConflicts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSyncConflictsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSyncConflicts>>> = ({ signal }) => listSyncConflicts(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSyncConflicts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSyncConflictsQueryResult = NonNullable<Awaited<ReturnType<typeof listSyncConflicts>>>
+export type ListSyncConflictsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Conflicts, optionally filtered by status
+ */
+
+export function useListSyncConflicts<TData = Awaited<ReturnType<typeof listSyncConflicts>>, TError = ErrorType<unknown>>(
+ params?: ListSyncConflictsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSyncConflicts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSyncConflictsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getResolveSyncConflictUrl = (id: number,) => {
+
+
+
+
+  return `/api/sync-conflicts/${id}/resolve`
+}
+
+/**
+ * @summary Settle a pending conflict by choosing a side or supplying a merge
+ */
+export const resolveSyncConflict = async (id: number,
+    syncConflictResolution: SyncConflictResolution, options?: RequestInit): Promise<SyncConflict> => {
+
+  return customFetch<SyncConflict>(getResolveSyncConflictUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(syncConflictResolution)
+  }
+);}
+
+
+
+
+
+export const getResolveSyncConflictMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveSyncConflict>>, TError,{id: number;data: BodyType<SyncConflictResolution>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolveSyncConflict>>, TError,{id: number;data: BodyType<SyncConflictResolution>}, TContext> => {
+
+const mutationKey = ['resolveSyncConflict'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolveSyncConflict>>, {id: number;data: BodyType<SyncConflictResolution>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  resolveSyncConflict(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolveSyncConflictMutationResult = NonNullable<Awaited<ReturnType<typeof resolveSyncConflict>>>
+    export type ResolveSyncConflictMutationBody = BodyType<SyncConflictResolution>
+    export type ResolveSyncConflictMutationError = ErrorType<void>
+
+    /**
+ * @summary Settle a pending conflict by choosing a side or supplying a merge
+ */
+export const useResolveSyncConflict = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveSyncConflict>>, TError,{id: number;data: BodyType<SyncConflictResolution>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resolveSyncConflict>>,
+        TError,
+        {id: number;data: BodyType<SyncConflictResolution>},
+        TContext
+      > => {
+      return useMutation(getResolveSyncConflictMutationOptions(options));
     }
 

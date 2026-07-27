@@ -2355,6 +2355,257 @@ export interface ScheduledReportUpdate {
   format?: ScheduledReportUpdateFormat;
 }
 
+export type SyncEntityConflictPolicy = typeof SyncEntityConflictPolicy[keyof typeof SyncEntityConflictPolicy];
+
+
+export const SyncEntityConflictPolicy = {
+  manual: 'manual',
+  last_write_wins: 'last_write_wins',
+  server_wins: 'server_wins',
+  node_wins: 'node_wins',
+} as const;
+
+export interface SyncEntity {
+  id: number;
+  tenantId: number;
+  entityType: string;
+  conflictPolicy: SyncEntityConflictPolicy;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Defaults to "manual" — the safe choice for records where a lost edit matters
+ */
+export type SyncEntityInputConflictPolicy = typeof SyncEntityInputConflictPolicy[keyof typeof SyncEntityInputConflictPolicy];
+
+
+export const SyncEntityInputConflictPolicy = {
+  manual: 'manual',
+  last_write_wins: 'last_write_wins',
+  server_wins: 'server_wins',
+  node_wins: 'node_wins',
+} as const;
+
+export interface SyncEntityInput {
+  entityType: string;
+  /** Defaults to "manual" — the safe choice for records where a lost edit matters */
+  conflictPolicy?: SyncEntityInputConflictPolicy;
+}
+
+export type SyncEntityUpdateConflictPolicy = typeof SyncEntityUpdateConflictPolicy[keyof typeof SyncEntityUpdateConflictPolicy];
+
+
+export const SyncEntityUpdateConflictPolicy = {
+  manual: 'manual',
+  last_write_wins: 'last_write_wins',
+  server_wins: 'server_wins',
+  node_wins: 'node_wins',
+} as const;
+
+export interface SyncEntityUpdate {
+  conflictPolicy?: SyncEntityUpdateConflictPolicy;
+  enabled?: boolean;
+}
+
+export type SyncNodeStatusProperty = typeof SyncNodeStatusProperty[keyof typeof SyncNodeStatusProperty];
+
+
+export const SyncNodeStatusProperty = {
+  active: 'active',
+  paused: 'paused',
+  decommissioned: 'decommissioned',
+} as const;
+
+export interface SyncNode {
+  id: number;
+  tenantId: number;
+  nodeKey: string;
+  name: string;
+  location?: string | null;
+  status: SyncNodeStatusProperty;
+  cursor: number;
+  lastPulledAt?: string | null;
+  lastPushedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SyncNodeStatus = SyncNode & {
+  /** How many changes this node has yet to pull */
+  behind: number;
+  upToDate: boolean;
+};
+
+export interface SyncNodeInput {
+  nodeKey: string;
+  name: string;
+  location?: string;
+}
+
+export type SyncNodeUpdateStatus = typeof SyncNodeUpdateStatus[keyof typeof SyncNodeUpdateStatus];
+
+
+export const SyncNodeUpdateStatus = {
+  active: 'active',
+  paused: 'paused',
+  decommissioned: 'decommissioned',
+} as const;
+
+export interface SyncNodeUpdate {
+  name?: string;
+  location?: string;
+  status?: SyncNodeUpdateStatus;
+}
+
+export type SyncChangeOp = typeof SyncChangeOp[keyof typeof SyncChangeOp];
+
+
+export const SyncChangeOp = {
+  create: 'create',
+  update: 'update',
+  delete: 'delete',
+} as const;
+
+export interface SyncChange {
+  id: number;
+  tenantId: number;
+  seq: number;
+  entityType: string;
+  entityKey: string;
+  op: SyncChangeOp;
+  revision: number;
+  /** JSON-encoded snapshot; null for deletes */
+  payload?: string | null;
+  originNodeId?: number | null;
+  actorUserId?: number | null;
+  createdAt: string;
+}
+
+export interface SyncPullInput {
+  nodeKey: string;
+  /** Capped server-side; a node on a poor link should request a small batch */
+  batchSize?: number;
+}
+
+export interface SyncPullResult {
+  changes: SyncChange[];
+  nextCursor: number;
+  hasMore: boolean;
+}
+
+export type SyncIncomingChangeOp = typeof SyncIncomingChangeOp[keyof typeof SyncIncomingChangeOp];
+
+
+export const SyncIncomingChangeOp = {
+  create: 'create',
+  update: 'update',
+  delete: 'delete',
+} as const;
+
+export interface SyncIncomingChange {
+  entityType: string;
+  entityKey: string;
+  op: SyncIncomingChangeOp;
+  /** The revision the node was working from; 0 for a create */
+  baseRevision: number;
+  /** Proposed snapshot; omitted for deletes */
+  payload?: unknown;
+  /** Epoch milliseconds on the node, used only by last_write_wins */
+  updatedAt?: number;
+}
+
+export interface SyncPushInput {
+  nodeKey: string;
+  changes: SyncIncomingChange[];
+}
+
+export type SyncPushOutcomeOutcome = typeof SyncPushOutcomeOutcome[keyof typeof SyncPushOutcomeOutcome];
+
+
+export const SyncPushOutcomeOutcome = {
+  fast_forward: 'fast_forward',
+  apply: 'apply',
+  discard: 'discard',
+  conflict: 'conflict',
+} as const;
+
+export type SyncPushOutcomeWinner = typeof SyncPushOutcomeWinner[keyof typeof SyncPushOutcomeWinner];
+
+
+export const SyncPushOutcomeWinner = {
+  node: 'node',
+  server: 'server',
+  none: 'none',
+} as const;
+
+export interface SyncPushOutcome {
+  entityType: string;
+  entityKey: string;
+  outcome: SyncPushOutcomeOutcome;
+  winner: SyncPushOutcomeWinner;
+  reason: string;
+  conflictId?: number;
+  seq?: number;
+}
+
+export interface SyncPushResult {
+  outcomes: SyncPushOutcome[];
+}
+
+export type SyncConflictStatus = typeof SyncConflictStatus[keyof typeof SyncConflictStatus];
+
+
+export const SyncConflictStatus = {
+  pending: 'pending',
+  resolved: 'resolved',
+} as const;
+
+export type SyncConflictResolvedWith = typeof SyncConflictResolvedWith[keyof typeof SyncConflictResolvedWith] | null;
+
+
+export const SyncConflictResolvedWith = {
+  server: 'server',
+  node: 'node',
+  merged: 'merged',
+} as const;
+
+export interface SyncConflict {
+  id: number;
+  tenantId: number;
+  nodeId: number;
+  entityType: string;
+  entityKey: string;
+  baseRevision?: number | null;
+  serverRevision?: number | null;
+  nodeRevision?: number | null;
+  serverPayload?: string | null;
+  nodePayload?: string | null;
+  policy: string;
+  status: SyncConflictStatus;
+  resolvedWith?: SyncConflictResolvedWith;
+  resolvedByUserId?: number | null;
+  resolvedPayload?: string | null;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+export type SyncConflictResolutionChoice = typeof SyncConflictResolutionChoice[keyof typeof SyncConflictResolutionChoice];
+
+
+export const SyncConflictResolutionChoice = {
+  server: 'server',
+  node: 'node',
+  merged: 'merged',
+} as const;
+
+export interface SyncConflictResolution {
+  choice: SyncConflictResolutionChoice;
+  /** Required when choice is "merged" */
+  mergedPayload?: unknown;
+}
+
 export type ListDepartmentsParams = {
 tenantId?: number;
 };
@@ -2568,5 +2819,17 @@ export const ListReportDefinitionsStatus = {
   active: 'active',
   deprecated: 'deprecated',
   archived: 'archived',
+} as const;
+
+export type ListSyncConflictsParams = {
+status?: ListSyncConflictsStatus;
+};
+
+export type ListSyncConflictsStatus = typeof ListSyncConflictsStatus[keyof typeof ListSyncConflictsStatus];
+
+
+export const ListSyncConflictsStatus = {
+  pending: 'pending',
+  resolved: 'resolved',
 } as const;
 

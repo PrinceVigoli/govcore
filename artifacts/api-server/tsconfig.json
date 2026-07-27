@@ -22,7 +22,13 @@
       "path": "../../lib/integration-engine"
     },
     {
+      "path": "../../lib/queue-utils"
+    },
+    {
       "path": "../../lib/report-engine"
+    },
+    {
+      "path": "../../lib/sync-engine"
     }
   ]
 }

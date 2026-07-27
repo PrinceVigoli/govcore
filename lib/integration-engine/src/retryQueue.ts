@@ -1,5 +1,6 @@
 import { eq, and, or, inArray, lte, asc } from "drizzle-orm";
 import { db, integrationRetryQueueTable, type IntegrationRetryQueueItem } from "@workspace/db";
+import { STALE_PROCESSING_MS } from "@workspace/queue-utils";
 import { decideRetry } from "./retryPolicy";
 
 // Integration Engine (Sprint 2A) — Retry Queue worker.
@@ -16,11 +17,11 @@ import { decideRetry } from "./retryPolicy";
 // worker never needs to look at webhook_subscriptions itself — it just
 // ships bytes and records the outcome.
 
-// A row claimed by a worker that then crashed mid-delivery would otherwise
-// sit "processing" forever; treat it as due again after this long. Same
+// STALE_PROCESSING_MS (imported above, from @workspace/queue-utils): a row
+// claimed by a worker that then crashed mid-delivery would otherwise sit
+// "processing" forever; treat it as due again after this long. Same
 // tradeoff notificationEngine makes: a possible duplicate delivery if the
 // original worker was merely slow (not dead) beats losing the job.
-const STALE_PROCESSING_MS = 5 * 60_000;
 
 export interface QueuedDelivery {
   url: string;

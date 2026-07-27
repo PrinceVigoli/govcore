@@ -3638,3 +3638,251 @@ export const DeleteScheduledReportParams = zod.object({
 export const DeleteScheduledReportResponse = zod.void()
 
 
+/**
+ * @summary Entity types registered for synchronization, with their conflict policies
+ */
+export const ListSyncEntitiesResponseItem = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "entityType": zod.string(),
+  "conflictPolicy": zod.enum(['manual', 'last_write_wins', 'server_wins', 'node_wins']),
+  "enabled": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListSyncEntitiesResponse = zod.array(ListSyncEntitiesResponseItem)
+
+
+/**
+ * @summary Register an entity type for sync and set how its conflicts resolve
+ */
+export const RegisterSyncEntityBody = zod.object({
+  "entityType": zod.string(),
+  "conflictPolicy": zod.enum(['manual', 'last_write_wins', 'server_wins', 'node_wins']).optional().describe('Defaults to \"manual\" — the safe choice for records where a lost edit matters')
+})
+
+export const RegisterSyncEntityResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "entityType": zod.string(),
+  "conflictPolicy": zod.enum(['manual', 'last_write_wins', 'server_wins', 'node_wins']),
+  "enabled": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Change an entity's conflict policy or enable/disable its sync
+ */
+export const UpdateSyncEntityParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSyncEntityBody = zod.object({
+  "conflictPolicy": zod.enum(['manual', 'last_write_wins', 'server_wins', 'node_wins']).optional(),
+  "enabled": zod.boolean().optional()
+})
+
+export const UpdateSyncEntityResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "entityType": zod.string(),
+  "conflictPolicy": zod.enum(['manual', 'last_write_wins', 'server_wins', 'node_wins']),
+  "enabled": zod.boolean(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Registered nodes with their sync lag
+ */
+export const ListSyncNodesResponseItem = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "nodeKey": zod.string(),
+  "name": zod.string(),
+  "location": zod.string().nullish(),
+  "status": zod.enum(['active', 'paused', 'decommissioned']),
+  "cursor": zod.number(),
+  "lastPulledAt": zod.coerce.date().nullish(),
+  "lastPushedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "behind": zod.number().describe('How many changes this node has yet to pull'),
+  "upToDate": zod.boolean()
+}))
+export const ListSyncNodesResponse = zod.array(ListSyncNodesResponseItem)
+
+
+/**
+ * @summary Register a GovCore Node
+ */
+export const RegisterSyncNodeBody = zod.object({
+  "nodeKey": zod.string(),
+  "name": zod.string(),
+  "location": zod.string().optional()
+})
+
+export const RegisterSyncNodeResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "nodeKey": zod.string(),
+  "name": zod.string(),
+  "location": zod.string().nullish(),
+  "status": zod.enum(['active', 'paused', 'decommissioned']),
+  "cursor": zod.number(),
+  "lastPulledAt": zod.coerce.date().nullish(),
+  "lastPushedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Rename a node or change its status
+ */
+export const UpdateSyncNodeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSyncNodeBody = zod.object({
+  "name": zod.string().optional(),
+  "location": zod.string().optional(),
+  "status": zod.enum(['active', 'paused', 'decommissioned']).optional()
+})
+
+export const UpdateSyncNodeResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "nodeKey": zod.string(),
+  "name": zod.string(),
+  "location": zod.string().nullish(),
+  "status": zod.enum(['active', 'paused', 'decommissioned']),
+  "cursor": zod.number(),
+  "lastPulledAt": zod.coerce.date().nullish(),
+  "lastPushedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Fetch the next batch of changes for a node and advance its cursor
+ */
+export const PullSyncChangesBody = zod.object({
+  "nodeKey": zod.string(),
+  "batchSize": zod.number().optional().describe('Capped server-side; a node on a poor link should request a small batch')
+})
+
+export const PullSyncChangesResponse = zod.object({
+  "changes": zod.array(zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "seq": zod.number(),
+  "entityType": zod.string(),
+  "entityKey": zod.string(),
+  "op": zod.enum(['create', 'update', 'delete']),
+  "revision": zod.number(),
+  "payload": zod.string().nullish().describe('JSON-encoded snapshot; null for deletes'),
+  "originNodeId": zod.number().nullish(),
+  "actorUserId": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "nextCursor": zod.number(),
+  "hasMore": zod.boolean()
+})
+
+
+/**
+ * @summary Submit offline changes from a node for reconciliation
+ */
+export const PushSyncChangesBody = zod.object({
+  "nodeKey": zod.string(),
+  "changes": zod.array(zod.object({
+  "entityType": zod.string(),
+  "entityKey": zod.string(),
+  "op": zod.enum(['create', 'update', 'delete']),
+  "baseRevision": zod.number().describe('The revision the node was working from; 0 for a create'),
+  "payload": zod.unknown().optional().describe('Proposed snapshot; omitted for deletes'),
+  "updatedAt": zod.number().optional().describe('Epoch milliseconds on the node, used only by last_write_wins')
+}))
+})
+
+export const PushSyncChangesResponse = zod.object({
+  "outcomes": zod.array(zod.object({
+  "entityType": zod.string(),
+  "entityKey": zod.string(),
+  "outcome": zod.enum(['fast_forward', 'apply', 'discard', 'conflict']),
+  "winner": zod.enum(['node', 'server', 'none']),
+  "reason": zod.string(),
+  "conflictId": zod.number().optional(),
+  "seq": zod.number().optional()
+}))
+})
+
+
+/**
+ * @summary Conflicts, optionally filtered by status
+ */
+export const ListSyncConflictsQueryParams = zod.object({
+  "status": zod.enum(['pending', 'resolved']).optional()
+})
+
+export const ListSyncConflictsResponseItem = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "nodeId": zod.number(),
+  "entityType": zod.string(),
+  "entityKey": zod.string(),
+  "baseRevision": zod.number().nullish(),
+  "serverRevision": zod.number().nullish(),
+  "nodeRevision": zod.number().nullish(),
+  "serverPayload": zod.string().nullish(),
+  "nodePayload": zod.string().nullish(),
+  "policy": zod.string(),
+  "status": zod.enum(['pending', 'resolved']),
+  "resolvedWith": zod.enum(['server', 'node', 'merged']).nullish(),
+  "resolvedByUserId": zod.number().nullish(),
+  "resolvedPayload": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "resolvedAt": zod.coerce.date().nullish()
+})
+export const ListSyncConflictsResponse = zod.array(ListSyncConflictsResponseItem)
+
+
+/**
+ * @summary Settle a pending conflict by choosing a side or supplying a merge
+ */
+export const ResolveSyncConflictParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResolveSyncConflictBody = zod.object({
+  "choice": zod.enum(['server', 'node', 'merged']),
+  "mergedPayload": zod.unknown().optional().describe('Required when choice is \"merged\"')
+})
+
+export const ResolveSyncConflictResponse = zod.object({
+  "id": zod.number(),
+  "tenantId": zod.number(),
+  "nodeId": zod.number(),
+  "entityType": zod.string(),
+  "entityKey": zod.string(),
+  "baseRevision": zod.number().nullish(),
+  "serverRevision": zod.number().nullish(),
+  "nodeRevision": zod.number().nullish(),
+  "serverPayload": zod.string().nullish(),
+  "nodePayload": zod.string().nullish(),
+  "policy": zod.string(),
+  "status": zod.enum(['pending', 'resolved']),
+  "resolvedWith": zod.enum(['server', 'node', 'merged']).nullish(),
+  "resolvedByUserId": zod.number().nullish(),
+  "resolvedPayload": zod.string().nullish(),
+  "createdAt": zod.coerce.date(),
+  "resolvedAt": zod.coerce.date().nullish()
+})
+
+

@@ -2,6 +2,7 @@ import {
   renderString, renderTemplate, collectPlaceholders, parseVariables, isChannelEnabled,
   type NotificationTemplate, type NotificationPreference,
 } from './notifications.core';
+import { backoffMs } from '../../lib/queue-utils/src/backoff';
 
 let pass = 0, fail = 0;
 const t = (name: string, actual: unknown, expected: unknown) => {
@@ -76,8 +77,7 @@ t('unrelated event falls back to default',
 t("other user's prefs ignored",
   isChannelEnabled([P(2, 'email', null, false)], 1, 'Approved'), true);
 
-console.log('\n— backoff (mirrors engine) —');
-const backoffMs = (attempt: number) => Math.min(60_000 * 2 ** (attempt - 1), 60 * 60_000);
+console.log('\n— backoff (shared with Integration Engine via @workspace/queue-utils) —');
 t('attempt 1 = 1min', backoffMs(1), 60_000);
 t('attempt 2 = 2min', backoffMs(2), 120_000);
 t('attempt 3 = 4min', backoffMs(3), 240_000);

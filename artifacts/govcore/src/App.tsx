@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useAuth } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
-import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Redirect, Route, Switch, Router as WouterRouter } from 'wouter';
@@ -12,8 +10,6 @@ import Landing from '@/pages/landing';
 import Dashboard from '@/pages/dashboard';
 import TenantsList from '@/pages/tenants/list';
 import TenantDetail from '@/pages/tenants/detail';
-import DepartmentsList from '@/pages/departments/list';
-import AuditLogsList from '@/pages/audit-logs/list';
 import UsersList from '@/pages/users/list';
 import UserDetail from '@/pages/users/detail';
 import RolesList from '@/pages/roles/list';
@@ -42,6 +38,16 @@ import SearchPage from '@/pages/search';
 import IntegrationsPage from '@/pages/integrations';
 import ReportsList from '@/pages/reports/list';
 import ReportDetail from '@/pages/reports/detail';
+import SyncPage from '@/pages/sync';
+import NotificationPreferencesPage from '@/pages/notification-preferences';
+// Treasury Module
+import TreasuryOverview from '@/pages/treasury/overview';
+import TreasuryFunds from '@/pages/treasury/funds';
+import TreasuryAccounts from '@/pages/treasury/accounts';
+import TreasuryBudgets from '@/pages/treasury/budgets';
+import TreasuryVouchers from '@/pages/treasury/vouchers';
+import VoucherDetail from '@/pages/treasury/voucher-detail';
+import TreasuryCollections from '@/pages/treasury/collections';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient();
@@ -78,8 +84,6 @@ function AuthenticatedRoutes() {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/tenants" component={TenantsList} />
         <Route path="/tenants/:id" component={TenantDetail} />
-        <Route path="/departments" component={DepartmentsList} />
-        <Route path="/audit-logs" component={AuditLogsList} />
         <Route path="/users" component={UsersList} />
         <Route path="/users/:id" component={UserDetail} />
         <Route path="/roles" component={RolesList} />
@@ -107,24 +111,20 @@ function AuthenticatedRoutes() {
         <Route path="/integrations" component={IntegrationsPage} />
         <Route path="/reports" component={ReportsList} />
         <Route path="/reports/:id" component={ReportDetail} />
+        <Route path="/sync" component={SyncPage} />
+        <Route path="/notification-preferences" component={NotificationPreferencesPage} />
+        {/* Treasury Module — order matters: :id before the list, bare /treasury last */}
+        <Route path="/treasury/funds" component={TreasuryFunds} />
+        <Route path="/treasury/accounts" component={TreasuryAccounts} />
+        <Route path="/treasury/budgets" component={TreasuryBudgets} />
+        <Route path="/treasury/vouchers/:id" component={VoucherDetail} />
+        <Route path="/treasury/vouchers" component={TreasuryVouchers} />
+        <Route path="/treasury/collections" component={TreasuryCollections} />
+        <Route path="/treasury" component={TreasuryOverview} />
         <Route component={NotFound} />
       </Switch>
     </Shell>
   );
-}
-
-function AuthTokenBridge() {
-  const { getToken, isSignedIn } = useAuth();
-
-  useEffect(() => {
-    if (isSignedIn) {
-      setAuthTokenGetter(() => getToken());
-    } else {
-      setAuthTokenGetter(null);
-    }
-  }, [isSignedIn, getToken]);
-
-  return null;
 }
 
 function Router() {
@@ -168,7 +168,6 @@ function App() {
       >
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <AuthTokenBridge />
             <Router />
             <Toaster />
           </TooltipProvider>

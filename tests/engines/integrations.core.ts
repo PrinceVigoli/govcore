@@ -1,15 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { backoffMs } from "../../lib/queue-utils/src/backoff";
 
-// Integration Engine (Sprint 2A) — pure retry/backoff and signature logic.
-// Mirrors `backoffMs` in notificationEngine.ts exactly (same formula, same
-// cap) so the two queues behave identically to an operator reasoning about
-// "how long until this retries". Kept dependency-free so it can be copied
-// into tests/engines/integrations.core.ts for database-free tests.
-
-/** Exponential backoff, capped at 1 hour — identical formula to the Notification Engine's queue worker. */
-export function backoffMs(attempt: number): number {
-  return Math.min(60_000 * 2 ** (attempt - 1), 60 * 60_000);
-}
+// Integration Engine (Sprint 2A) — pure retry/signature logic, mirroring
+// `lib/integration-engine/src/retryPolicy.ts` for database-free tests.
+// `backoffMs` itself now lives in `@workspace/queue-utils` (single shared
+// source with notificationEngine.ts's queue worker, Task 3 dedup pass), so
+// this test copy imports it directly by relative path rather than
+// redefining it — same dependency-free guarantee, one fewer place to drift.
+export { backoffMs } from "../../lib/queue-utils/src/backoff";
 
 export interface RetryDecision {
   shouldRetry: boolean;

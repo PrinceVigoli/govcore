@@ -20,6 +20,7 @@ npx tsx tests/engines/authorization.test.ts
 npx tsx tests/engines/search.test.ts
 npx tsx tests/engines/integrations.test.ts
 npx tsx tests/engines/reports.test.ts
+npx tsx tests/engines/sync.test.ts
 ```
 
 Each exits non-zero on failure, so they work in CI as-is.
@@ -33,10 +34,11 @@ Each exits non-zero on failure, so they work in CI as-is.
 | `notifications` | 43 | Template rendering, missing-variable detection, preference precedence, retry backoff, priority ordering, status rollup |
 | `documents` | 42 | Lifecycle transitions, content hashing, path-traversal sanitization, QR verification decisions, signature staleness |
 | `auth` | 2 | Actor extraction from the request (identity is otherwise handled by Clerk, not unit-testable here) |
-| `authorization` | 51 | Path→module mapping (incl. `/api` prefix stripping, first-match ordering, ungated paths), RBAC predicate: superadmin bypass, `*` module/action wildcards, manage-implies-read asymmetry, null grants deny, fail-closed folding |
+| `authorization` | 73 | Path→module mapping (incl. `/api` prefix stripping, first-match ordering, ungated paths), RBAC predicate: superadmin bypass, `*` module/action wildcards, manage-implies-read asymmetry, null grants deny, fail-closed folding, **privilege-escalation guard** (a reserved role code alone confers nothing without `isSystem`) |
 | `search` | 23 | Tokenization, title>subtitle>content weighting, all-tokens bonus, stable tie-breaking, permission filtering (fails closed) |
 | `integrations` | 26 | Retry backoff (matches Notification Engine), retry vs dead-letter, HMAC signing, constant-time verification, tamper rejection |
 | `reports` | 64 | Spec compiler: source/column whitelisting, unconditional tenant scoping, full parameterization (no inlined operands), enum validation, grouping; CSV RFC-4180 quoting; cron validation/matching/next-fire |
+| `sync` | 69 | Conflict detection (stale base, duplicate create, base-ahead-of-server); all four per-entity policies incl. LWW tiebreaks and missing clocks; cursor batching, own-change exclusion, cursor-advance validation, sync lag |
 
 ## Invariants worth keeping
 
@@ -71,6 +73,20 @@ Several tests exist because the behaviour is easy to break and hard to notice:
   filter operand as a parameter — so user-supplied report config can't reach an
   arbitrary table, skip tenant scoping, or inject SQL. This is the single most
   important thing the `reports` suite guards.
+- **A node's cursor never advances past what it actually received.** An empty
+  pull batch leaves the cursor untouched; a batch advances it only to the last
+  change sent. Jumping to "latest" would silently skip every change that was
+  filtered out of the batch — permanently, since pulls only look forward.
+- **A divergence is never silently discarded under the manual policy.** It is
+  written to `sync_conflicts` as pending and surfaced for a person. Auto-resolving
+  policies still record how the conflict was settled, so the audit trail is
+  complete either way. Last-write-wins ties and missing clocks resolve to the
+  server deterministically — never a coin flip on government data.
+- **Superadmin needs BOTH a reserved role code AND `isSystem`.** Roles are
+  tenant-scoped and created through `POST /roles`, so recognising superadmin on
+  the code alone would let anyone with `identity:manage` mint a
+  "platform_admin" role and reach every other LGU. `isSystem` is never accepted
+  from a request body. Removing either half reopens the escalation.
 - **`moduleForPath` only strips a leading `/api` segment**, not a substring —
   `/apidocs` is not `/docs`. A wrong path→module mapping guards a route with
   the wrong permissions, or none.

@@ -14,6 +14,7 @@ import {
   ListRolesQueryParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
+import { SUPERADMIN_ROLE_CODES } from "../lib/authorization";
 import { logAudit } from "../lib/audit";
 import type { JwtPayload } from "../lib/auth";
 
@@ -37,6 +38,24 @@ router.get("/roles", requireAuth, async (req, res): Promise<void> => {
   res.json(roles.map(serializeRole));
 });
 
+
+// Reserved role codes confer superadmin status (see lib/authorization.ts), and
+// superadmin now means cross-tenant reach. Roles are tenant-scoped and created
+// through this endpoint, so without this guard anyone holding identity:manage
+// in their own tenant could mint a "platform_admin" role, assign it to
+// themselves, and acquire access to every other LGU's records.
+//
+// This is one half of a two-part defence; the other is that superadmin
+// recognition additionally requires `isSystem`, which is never accepted from
+// client input here. Removing either half reopens the escalation.
+function reservedCodeError(code: string | undefined): string | null {
+  if (!code) return null;
+  if ((SUPERADMIN_ROLE_CODES as readonly string[]).includes(code.trim().toLowerCase())) {
+    return `Role code "${code}" is reserved for platform administration and cannot be created or changed through the API`;
+  }
+  return null;
+}
+
 router.post("/roles", requireAuth, async (req, res): Promise<void> => {
   const actor = (req as typeof req & { user: JwtPayload }).user;
   const parsed = CreateRoleBody.safeParse(req.body);
@@ -44,7 +63,13 @@ router.post("/roles", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [role] = await db.insert(rolesTable).values(parsed.data).returning();
+  const codeError = reservedCodeError(parsed.data.code);
+  if (codeError) {
+    res.status(403).json({ error: codeError });
+    return;
+  }
+  // isSystem is set only by the bootstrap path, never from a request body.
+  const [role] = await db.insert(rolesTable).values({ ...parsed.data, isSystem: false }).returning();
   await logAudit({ actor, action: "create", resource: "role", resourceId: role.id });
   res.status(201).json(serializeRole(role));
 });
@@ -80,7 +105,28 @@ router.patch("/roles/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [role] = await db.update(rolesTable).set(parsed.data).where(eq(rolesTable.id, params.data.id)).returning();
+  const codeError = reservedCodeError(parsed.data.code);
+  if (codeError) {
+    res.status(403).json({ error: codeError });
+    return;
+  }
+
+  // A system role is platform-owned; renaming or re-coding one through the API
+  // is how an attacker would try to reach the isSystem half of the superadmin
+  // check without going through the reserved-code half.
+  const [existing] = await db.select().from(rolesTable).where(eq(rolesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Role not found" });
+    return;
+  }
+  if (existing.isSystem) {
+    res.status(403).json({ error: "System roles cannot be modified through the API" });
+    return;
+  }
+
+  // isSystem is never accepted from a request body — see reservedCodeError.
+  const { isSystem: _ignoredIsSystem, ...safeUpdate } = parsed.data as typeof parsed.data & { isSystem?: boolean };
+  const [role] = await db.update(rolesTable).set(safeUpdate).where(eq(rolesTable.id, params.data.id)).returning();
   if (!role) {
     res.status(404).json({ error: "Role not found" });
     return;

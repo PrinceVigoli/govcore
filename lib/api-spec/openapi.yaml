@@ -2919,6 +2919,226 @@ paths:
         "404":
           description: Not found
 
+  /sync-entities:
+    get:
+      operationId: listSyncEntities
+      tags: [sync]
+      summary: Entity types registered for synchronization, with their conflict policies
+      responses:
+        "200":
+          description: Registered syncable entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SyncEntity"
+    post:
+      operationId: registerSyncEntity
+      tags: [sync]
+      summary: Register an entity type for sync and set how its conflicts resolve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncEntityInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncEntity"
+        "400":
+          description: Unknown conflict policy
+
+  /sync-entities/{id}:
+    patch:
+      operationId: updateSyncEntity
+      tags: [sync]
+      summary: Change an entity's conflict policy or enable/disable its sync
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncEntityUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncEntity"
+        "400":
+          description: Unknown conflict policy
+        "404":
+          description: Not found
+
+  /sync-nodes:
+    get:
+      operationId: listSyncNodes
+      tags: [sync]
+      summary: Registered nodes with their sync lag
+      responses:
+        "200":
+          description: Nodes for the caller's tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SyncNodeStatus"
+    post:
+      operationId: registerSyncNode
+      tags: [sync]
+      summary: Register a GovCore Node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncNodeInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncNode"
+        "409":
+          description: A node with this key already exists
+
+  /sync-nodes/{id}:
+    patch:
+      operationId: updateSyncNode
+      tags: [sync]
+      summary: Rename a node or change its status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncNodeUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncNode"
+        "404":
+          description: Not found
+
+  /sync/pull:
+    post:
+      operationId: pullSyncChanges
+      tags: [sync]
+      summary: Fetch the next batch of changes for a node and advance its cursor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncPullInput"
+      responses:
+        "200":
+          description: A batch of changes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncPullResult"
+        "404":
+          description: Node not found
+        "409":
+          description: Node is not active
+
+  /sync/push:
+    post:
+      operationId: pushSyncChanges
+      tags: [sync]
+      summary: Submit offline changes from a node for reconciliation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncPushInput"
+      responses:
+        "200":
+          description: Per-change outcomes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncPushResult"
+        "404":
+          description: Node not found
+        "409":
+          description: Node is not active
+
+  /sync-conflicts:
+    get:
+      operationId: listSyncConflicts
+      tags: [sync]
+      summary: Conflicts, optionally filtered by status
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, resolved]
+      responses:
+        "200":
+          description: Conflicts for the caller's tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SyncConflict"
+
+  /sync-conflicts/{id}/resolve:
+    post:
+      operationId: resolveSyncConflict
+      tags: [sync]
+      summary: Settle a pending conflict by choosing a side or supplying a merge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncConflictResolution"
+      responses:
+        "200":
+          description: Resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncConflict"
+        "400":
+          description: Already resolved, or a merge without a payload
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -5835,3 +6055,293 @@ components:
         format:
           type: string
           enum: [json, csv]
+
+    SyncEntity:
+      type: object
+      required: [id, tenantId, entityType, conflictPolicy, enabled, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        entityType:
+          type: string
+        conflictPolicy:
+          type: string
+          enum: [manual, last_write_wins, server_wins, node_wins]
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SyncEntityInput:
+      type: object
+      required: [entityType]
+      properties:
+        entityType:
+          type: string
+        conflictPolicy:
+          type: string
+          enum: [manual, last_write_wins, server_wins, node_wins]
+          description: Defaults to "manual" — the safe choice for records where a lost edit matters
+
+    SyncEntityUpdate:
+      type: object
+      properties:
+        conflictPolicy:
+          type: string
+          enum: [manual, last_write_wins, server_wins, node_wins]
+        enabled:
+          type: boolean
+
+    SyncNode:
+      type: object
+      required: [id, tenantId, nodeKey, name, status, cursor, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        nodeKey:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, paused, decommissioned]
+        cursor:
+          type: integer
+        lastPulledAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastPushedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SyncNodeStatus:
+      allOf:
+        - $ref: "#/components/schemas/SyncNode"
+        - type: object
+          required: [behind, upToDate]
+          properties:
+            behind:
+              type: integer
+              description: How many changes this node has yet to pull
+            upToDate:
+              type: boolean
+
+    SyncNodeInput:
+      type: object
+      required: [nodeKey, name]
+      properties:
+        nodeKey:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+
+    SyncNodeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, decommissioned]
+
+    SyncChange:
+      type: object
+      required: [id, tenantId, seq, entityType, entityKey, op, revision, createdAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        seq:
+          type: integer
+        entityType:
+          type: string
+        entityKey:
+          type: string
+        op:
+          type: string
+          enum: [create, update, delete]
+        revision:
+          type: integer
+        payload:
+          type: string
+          nullable: true
+          description: JSON-encoded snapshot; null for deletes
+        originNodeId:
+          type: integer
+          nullable: true
+        actorUserId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    SyncPullInput:
+      type: object
+      required: [nodeKey]
+      properties:
+        nodeKey:
+          type: string
+        batchSize:
+          type: integer
+          description: Capped server-side; a node on a poor link should request a small batch
+
+    SyncPullResult:
+      type: object
+      required: [changes, nextCursor, hasMore]
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncChange"
+        nextCursor:
+          type: integer
+        hasMore:
+          type: boolean
+
+    SyncIncomingChange:
+      type: object
+      required: [entityType, entityKey, op, baseRevision]
+      properties:
+        entityType:
+          type: string
+        entityKey:
+          type: string
+        op:
+          type: string
+          enum: [create, update, delete]
+        baseRevision:
+          type: integer
+          description: The revision the node was working from; 0 for a create
+        payload:
+          description: Proposed snapshot; omitted for deletes
+        updatedAt:
+          type: integer
+          description: Epoch milliseconds on the node, used only by last_write_wins
+
+    SyncPushInput:
+      type: object
+      required: [nodeKey, changes]
+      properties:
+        nodeKey:
+          type: string
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncIncomingChange"
+
+    SyncPushOutcome:
+      type: object
+      required: [entityType, entityKey, outcome, winner, reason]
+      properties:
+        entityType:
+          type: string
+        entityKey:
+          type: string
+        outcome:
+          type: string
+          enum: [fast_forward, apply, discard, conflict]
+        winner:
+          type: string
+          enum: [node, server, none]
+        reason:
+          type: string
+        conflictId:
+          type: integer
+        seq:
+          type: integer
+
+    SyncPushResult:
+      type: object
+      required: [outcomes]
+      properties:
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncPushOutcome"
+
+    SyncConflict:
+      type: object
+      required: [id, tenantId, nodeId, entityType, entityKey, policy, status, createdAt]
+      properties:
+        id:
+          type: integer
+        tenantId:
+          type: integer
+        nodeId:
+          type: integer
+        entityType:
+          type: string
+        entityKey:
+          type: string
+        baseRevision:
+          type: integer
+          nullable: true
+        serverRevision:
+          type: integer
+          nullable: true
+        nodeRevision:
+          type: integer
+          nullable: true
+        serverPayload:
+          type: string
+          nullable: true
+        nodePayload:
+          type: string
+          nullable: true
+        policy:
+          type: string
+        status:
+          type: string
+          enum: [pending, resolved]
+        resolvedWith:
+          type: string
+          nullable: true
+          enum: [server, node, merged]
+        resolvedByUserId:
+          type: integer
+          nullable: true
+        resolvedPayload:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    SyncConflictResolution:
+      type: object
+      required: [choice]
+      properties:
+        choice:
+          type: string
+          enum: [server, node, merged]
+        mergedPayload:
+          description: Required when choice is "merged"

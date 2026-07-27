@@ -14,6 +14,7 @@ import {
   type NotificationDelivery,
   type NotificationPreference,
 } from "@workspace/db";
+import { backoffMs, STALE_PROCESSING_MS } from "@workspace/queue-utils";
 
 // ── Serialization ──────────────────────────────────────────────────────────
 // Every date column is serialized to an ISO string so the wire shape matches
@@ -382,20 +383,14 @@ export async function deliver(opts: {
   }
 }
 
-// Exponential backoff between attempts, so a provider outage doesn't get
-// hammered by a queue draining at full speed (§13 Retry policies).
-function backoffMs(attempt: number): number {
-  return Math.min(60_000 * 2 ** (attempt - 1), 60 * 60_000);
-}
+// backoffMs / STALE_PROCESSING_MS (imported above, from @workspace/queue-utils):
+// exponential backoff between attempts, so a provider outage doesn't get
+// hammered by a queue draining at full speed (§13 Retry policies), and the
+// stale-processing reclaim window for a worker that crashed mid-delivery.
+// Shared with the Integration Engine's retry queue (`retryQueue.ts`) so the
+// two queues can't drift apart — see Task 3, Sprint 2A.
 
 const PRIORITY_RANK: Record<string, number> = { high: 0, normal: 1, low: 2 };
-
-// A row claimed by a worker that then crashed (or was killed mid-delivery)
-// would otherwise sit in "processing" forever. Treating it as due again after
-// this long lets another worker pick it up — the tradeoff is a possible
-// duplicate send if the original worker was merely slow, not dead, which is
-// preferable to losing the notification.
-const STALE_PROCESSING_MS = 5 * 60_000;
 
 /**
  * Processes due queue items (§13 Queue workers, Batch processing, Channel

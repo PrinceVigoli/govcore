@@ -28,6 +28,8 @@ import attachmentsRouter from "./attachments";
 import searchRouter from "./search";
 import integrationsRouter from "./integrations";
 import reportsRouter from "./reports";
+import syncRouter from "./sync";
+import treasuryRouter from "./treasury";
 
 const router: IRouter = Router();
 
@@ -60,5 +62,7 @@ router.use(attachmentsRouter);
 router.use(searchRouter);
 router.use(integrationsRouter);
 router.use(reportsRouter);
+router.use(syncRouter);
+router.use(treasuryRouter);
 
 export default router;

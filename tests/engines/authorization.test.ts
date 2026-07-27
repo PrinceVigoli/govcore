@@ -10,6 +10,8 @@ import {
   moduleForPath,
   roleGrantsPermission,
   anyGrantPermits,
+  isSuperadminGrant,
+  anyGrantIsSuperadmin,
   SUPERADMIN_ROLE_CODES,
   type RoleGrant,
 } from "../../artifacts/api-server/src/lib/authorization";
@@ -27,11 +29,15 @@ function check(name: string, actual: unknown, expected: unknown) {
   }
 }
 
-const grant = (roleCode: string, permissionModule: string | null, permissionAction: string | null): RoleGrant => ({
-  roleCode,
-  permissionModule,
-  permissionAction,
-});
+const grant = (
+  roleCode: string,
+  permissionModule: string | null,
+  permissionAction: string | null,
+  isSystem = false,
+): RoleGrant => ({ roleCode, isSystem, permissionModule, permissionAction });
+
+/** A genuine platform role: reserved code AND system-owned. */
+const systemGrant = (roleCode: string): RoleGrant => grant(roleCode, null, null, true);
 
 console.log("\n— moduleForPath: each module resolves —");
 check("tenants -> identity", moduleForPath("/tenants"), "identity");
@@ -53,6 +59,14 @@ check("documents -> documents", moduleForPath("/documents/7"), "documents");
 check("document-templates -> documents", moduleForPath("/document-templates"), "documents");
 check("search -> search", moduleForPath("/search"), "search");
 check("integrations -> integrations", moduleForPath("/integrations/webhooks"), "integrations");
+check("report-definitions -> reports", moduleForPath("/report-definitions/3/run"), "reports");
+check("report-sources -> reports", moduleForPath("/report-sources"), "reports");
+check("report-preview -> reports", moduleForPath("/report-preview"), "reports");
+check("scheduled-reports -> reports", moduleForPath("/scheduled-reports"), "reports");
+check("sync pull -> sync", moduleForPath("/sync/pull"), "sync");
+check("sync-nodes -> sync", moduleForPath("/sync-nodes"), "sync");
+check("sync-conflicts -> sync", moduleForPath("/sync-conflicts/1/resolve"), "sync");
+check("treasury -> treasury", moduleForPath("/treasury/vouchers/9"), "treasury");
 
 console.log("\n— moduleForPath: /api prefix is stripped —");
 check("/api/documents -> documents", moduleForPath("/api/documents"), "documents");
@@ -71,12 +85,32 @@ console.log("\n— moduleForPath: first-match ordering —");
 // Every "workflow-*" must land on workflows, not be shadowed by a later rule.
 check("workflow-definitions -> workflows (not forms)", moduleForPath("/workflow-definitions"), "workflows");
 
-console.log("\n— roleGrantsPermission: superadmin bypass —");
+console.log("\n— roleGrantsPermission: superadmin bypass requires a SYSTEM role —");
 for (const code of SUPERADMIN_ROLE_CODES) {
-  // Superadmins are allowed everything, even with no permission rows attached.
-  check(`${code} allowed despite null grant`, roleGrantsPermission(grant(code, null, null), "documents", "manage"), true);
-  check(`${code} allowed on read`, roleGrantsPermission(grant(code, null, null), "search", "read"), true);
+  // A real platform role: reserved code + isSystem. Allowed everything.
+  check(`${code} (system) allowed despite null grant`, roleGrantsPermission(systemGrant(code), "documents", "manage"), true);
+  check(`${code} (system) allowed on read`, roleGrantsPermission(systemGrant(code), "search", "read"), true);
 }
+
+console.log("\n— PRIVILEGE ESCALATION GUARD: a reserved code alone is NOT enough —");
+// Roles are tenant-scoped and created through POST /roles. If a reserved code
+// by itself conferred superadmin, anyone holding identity:manage in their own
+// tenant could mint a "platform_admin" role, assign it to themselves, and
+// reach every other LGU's records. isSystem is never accepted from a request
+// body, so requiring it is what closes that path.
+for (const code of SUPERADMIN_ROLE_CODES) {
+  check(`forged ${code} (isSystem=false) is NOT superadmin`, isSuperadminGrant(grant(code, null, null, false)), false);
+  check(`forged ${code} grants no permissions`, roleGrantsPermission(grant(code, null, null, false), "documents", "manage"), false);
+  check(`genuine ${code} (isSystem=true) IS superadmin`, isSuperadminGrant(systemGrant(code)), true);
+}
+// isSystem alone is likewise insufficient — both halves must hold.
+check("system role with an ordinary code is not superadmin", isSuperadminGrant(grant("clerk", null, null, true)), false);
+check("ordinary role, ordinary code is not superadmin", isSuperadminGrant(grant("clerk", null, null, false)), false);
+
+console.log("\n— anyGrantIsSuperadmin —");
+check("empty grants -> not superadmin", anyGrantIsSuperadmin([]), false);
+check("one genuine system role anywhere wins", anyGrantIsSuperadmin([grant("clerk", "forms", "read"), systemGrant("platform_admin")]), true);
+check("a set of forged roles never confers it", anyGrantIsSuperadmin(SUPERADMIN_ROLE_CODES.map((c) => grant(c, "*", "*", false))), false);
 
 console.log("\n— roleGrantsPermission: null / empty grants deny —");
 check("null module denies", roleGrantsPermission(grant("clerk", null, "read"), "documents", "read"), false);
@@ -118,7 +152,7 @@ check(
 );
 check(
   "a superadmin row anywhere in the set wins",
-  anyGrantPermits([grant("clerk", "forms", "read"), grant("platform_admin", null, null)], "documents", "manage"),
+  anyGrantPermits([grant("clerk", "forms", "read"), systemGrant("platform_admin")], "documents", "manage"),
   true,
 );
 check(

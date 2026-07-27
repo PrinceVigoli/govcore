@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk, useAuth } from '@clerk/react';
 import { useGetMe, getGetMeQueryKey } from '@workspace/api-client-react';
-import { LayoutTemplate, Mail, Building2, Users, Shield, LayoutGrid, ScrollText, LogOut, Loader2, Landmark, GitBranch, ListChecks, FileText, ClipboardList, Scale, Bell, FolderOpen, Search, Plug, BarChart3 } from 'lucide-react';
+import { LayoutTemplate, Mail, Building2, Users, Shield, LayoutGrid, ScrollText, LogOut, Loader2, Landmark, GitBranch, ListChecks, FileText, ClipboardList, Scale, Bell, FolderOpen, Search, Plug, BarChart3, RefreshCw, SlidersHorizontal, Banknote, Wallet, TrendingUp, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,20 @@ const navItems = [
   { name: 'Search', path: '/search', icon: Search },
   { name: 'Integrations', path: '/integrations', icon: Plug },
   { name: 'Reports', path: '/reports', icon: BarChart3 },
+  { name: 'Sync', path: '/sync', icon: RefreshCw },
+  { name: 'Notification Settings', path: '/notification-preferences', icon: SlidersHorizontal },
   { name: 'Audit Logs', path: '/audit-logs', icon: ScrollText },
+];
+
+// Treasury gets its own labelled section rather than six more top-level
+// entries, which would swamp the platform nav.
+const treasuryItems = [
+  { name: 'Overview', path: '/treasury', icon: Banknote },
+  { name: 'Funds', path: '/treasury/funds', icon: Wallet },
+  { name: 'Accounts', path: '/treasury/accounts', icon: Wallet },
+  { name: 'Budgets', path: '/treasury/budgets', icon: TrendingUp },
+  { name: 'Vouchers', path: '/treasury/vouchers', icon: FileText },
+  { name: 'Collections', path: '/treasury/collections', icon: Receipt },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -89,6 +102,33 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                 }`}
                 data-testid={`nav-${item.name.toLowerCase().replace(' ', '-')}`}
+              >
+                <item.icon className={`mr-3 h-5 w-5 shrink-0 ${active ? 'text-sidebar-primary' : 'text-sidebar-foreground/50'}`} />
+                {item.name}
+              </Link>
+            );
+          })}
+
+          {/* Treasury Section */}
+          <div className="pt-3 pb-1">
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 mb-1">Treasury</p>
+          </div>
+          {treasuryItems.map((item) => {
+            // Exact match for the /treasury overview, prefix match for sub-routes —
+            // otherwise "Overview" stays lit on every treasury screen.
+            const active = item.path === '/treasury'
+              ? location === '/treasury'
+              : location === item.path || location.startsWith(`${item.path}/`);
+            return (
+              <Link 
+                key={item.path} 
+                href={item.path}
+                className={`flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                  active 
+                    ? 'bg-sidebar-primary/10 text-sidebar-primary' 
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                }`}
+                data-testid={`nav-treasury-${item.name.toLowerCase()}`}
               >
                 <item.icon className={`mr-3 h-5 w-5 shrink-0 ${active ? 'text-sidebar-primary' : 'text-sidebar-foreground/50'}`} />
                 {item.name}

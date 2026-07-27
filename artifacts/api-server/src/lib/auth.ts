@@ -11,7 +11,7 @@ import {
   permissionsTable,
 } from "@workspace/db";
 import { logger } from "./logger";
-import { moduleForPath, anyGrantPermits } from "./authorization";
+import { moduleForPath, anyGrantPermits, anyGrantIsSuperadmin, type RoleGrant } from "./authorization";
 
 export interface JwtPayload {
   userId: number;
@@ -19,6 +19,7 @@ export interface JwtPayload {
   username: string;
   email: string;
   clerkUserId: string;
+  isSuperadmin: boolean;
 }
 
 type AuthenticatedRequest = Request & { user: JwtPayload };
@@ -27,16 +28,19 @@ function actorOf(req: Request): JwtPayload {
   return (req as AuthenticatedRequest).user;
 }
 
-async function hasPermission(userId: number, module: string, action: "read" | "manage"): Promise<boolean> {
-  const rows = await db
-    .select({ roleCode: rolesTable.code, permissionModule: permissionsTable.module, permissionAction: permissionsTable.action })
+async function getRoleGrants(userId: number): Promise<RoleGrant[]> {
+  return db
+    .select({
+      roleCode: rolesTable.code,
+      isSystem: rolesTable.isSystem,
+      permissionModule: permissionsTable.module,
+      permissionAction: permissionsTable.action,
+    })
     .from(userRolesTable)
     .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
     .leftJoin(rolePermissionsTable, eq(rolePermissionsTable.roleId, rolesTable.id))
     .leftJoin(permissionsTable, eq(rolePermissionsTable.permissionId, permissionsTable.id))
     .where(eq(userRolesTable.userId, userId));
-
-  return anyGrantPermits(rows, module, action);
 }
 
 async function ensureGovCoreUser(clerkUserId: string, email: string, firstName: string, lastName: string) {
@@ -90,7 +94,6 @@ async function ensureGovCoreUser(clerkUserId: string, email: string, firstName: 
 }
 
 const tenantScopedTables: Record<string, string> = {
-  tenants: "tenants",
   users: "users",
   roles: "roles",
   departments: "departments",
@@ -115,9 +118,13 @@ async function enforceTenantRecord(req: Request, actor: JwtPayload): Promise<boo
   const id = resource ? Number(segments[1]) : NaN;
   if (!table || !Number.isInteger(id)) return true;
 
-  const result = await db.execute(
-    sql`select 1 from ${sql.raw(table)} where id = ${id} and tenant_id = ${actor.tenantId} limit 1`,
-  );
+  // A superadmin may act on any tenant's records, so only confirm the row
+  // exists; everyone else stays confined to their own tenant.
+  const result = actor.isSuperadmin
+    ? await db.execute(sql`select 1 from ${sql.raw(table)} where id = ${id} limit 1`)
+    : await db.execute(
+        sql`select 1 from ${sql.raw(table)} where id = ${id} and tenant_id = ${actor.tenantId} limit 1`,
+      );
   if (result.rows.length > 0) return true;
   return false;
 }
@@ -152,34 +159,41 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
 
+    const grants = await getRoleGrants(user.id);
+
     const actor: JwtPayload = {
       userId: user.id,
       tenantId: user.tenantId,
       username: user.username,
       email: user.email,
       clerkUserId,
+      isSuperadmin: anyGrantIsSuperadmin(grants),
     };
     (req as AuthenticatedRequest).user = actor;
 
     const module = moduleForPath(req.path);
     if (module && req.path !== "/auth/me") {
       const action = req.method === "GET" ? "read" : "manage";
-      if (!(await hasPermission(actor.userId, module, action))) {
+      if (!anyGrantPermits(grants, module, action)) {
         res.status(403).json({ error: `Missing ${action} permission for ${module}` });
         return;
       }
     }
 
-    const requestedTenant = req.query.tenantId ?? req.body?.tenantId;
-    if (requestedTenant !== undefined && Number(requestedTenant) !== actor.tenantId) {
-      res.status(403).json({ error: "Tenant context does not match your membership" });
-      return;
-    }
-    if (req.method === "GET" && req.query.tenantId === undefined) {
-      req.query.tenantId = String(actor.tenantId);
-    }
-    if (req.method !== "GET" && req.body && typeof req.body === "object" && req.body.tenantId === undefined) {
-      req.body.tenantId = actor.tenantId;
+    // Superadmins may target any tenant explicitly, or omit tenantId to work
+    // across all of them. Everyone else is pinned to their own tenant.
+    if (!actor.isSuperadmin) {
+      const requestedTenant = req.query.tenantId ?? req.body?.tenantId;
+      if (requestedTenant !== undefined && Number(requestedTenant) !== actor.tenantId) {
+        res.status(403).json({ error: "Tenant context does not match your membership" });
+        return;
+      }
+      if (req.method === "GET" && req.query.tenantId === undefined) {
+        req.query.tenantId = String(actor.tenantId);
+      }
+      if (req.method !== "GET" && req.body && typeof req.body === "object" && req.body.tenantId === undefined) {
+        req.body.tenantId = actor.tenantId;
+      }
     }
     if (!(await enforceTenantRecord(req, actor))) {
       res.status(404).json({ error: "Resource not found" });

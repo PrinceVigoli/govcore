@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@workspace/db": "workspace:*",
+    "@workspace/queue-utils": "workspace:*",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {

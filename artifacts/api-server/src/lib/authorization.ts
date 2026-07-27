@@ -32,14 +32,46 @@ export function moduleForPath(path: string): string | null {
   if (/^\/documents|^\/document-templates/.test(path)) return "documents";
   if (/^\/search/.test(path)) return "search";
   if (/^\/integrations/.test(path)) return "integrations";
+  if (/^\/report-definitions|^\/report-sources|^\/report-preview|^\/scheduled-reports/.test(path)) return "reports";
+  if (/^\/sync/.test(path)) return "sync";
+  if (/^\/treasury/.test(path)) return "treasury";
   return null;
 }
 
 /** One role's grant, as read from the joined role/permission rows. */
 export interface RoleGrant {
   roleCode: string;
+  /**
+   * Whether the role is a system role. Load-bearing for security: a superadmin
+   * role code alone is NOT enough to be treated as a superadmin, because role
+   * codes are tenant-scoped and creatable through the API. See
+   * isSuperadminGrant.
+   */
+  isSystem: boolean;
   permissionModule: string | null;
   permissionAction: string | null;
+}
+
+/**
+ * Whether a grant confers superadmin status.
+ *
+ * A reserved role code is necessary but NOT sufficient. Roles live in a
+ * tenant-scoped table and are creatable through `POST /roles`, so recognizing
+ * superadmin on `code` alone would let anyone holding `identity:manage` in
+ * their own tenant mint a role called "platform_admin", assign it to
+ * themselves, and acquire cross-tenant reach over every other LGU. Requiring
+ * `isSystem` — which the roles API refuses to set (see routes/roles.ts) and
+ * only the bootstrap path writes — closes that escalation.
+ *
+ * Both halves must hold. Changing either without the other reopens the hole.
+ */
+export function isSuperadminGrant(grant: RoleGrant): boolean {
+  return grant.isSystem === true && (SUPERADMIN_ROLE_CODES as readonly string[]).includes(grant.roleCode);
+}
+
+/** Whether any of a user's grants confers superadmin status. */
+export function anyGrantIsSuperadmin(grants: RoleGrant[]): boolean {
+  return grants.some(isSuperadminGrant);
 }
 
 /**
@@ -54,7 +86,7 @@ export interface RoleGrant {
  *      be "manage" (which implies read), or be the "*" wildcard.
  */
 export function roleGrantsPermission(grant: RoleGrant, module: string, action: "read" | "manage"): boolean {
-  if ((SUPERADMIN_ROLE_CODES as readonly string[]).includes(grant.roleCode)) return true;
+  if (isSuperadminGrant(grant)) return true;
   if (!grant.permissionModule || !grant.permissionAction) return false;
   return (
     (grant.permissionModule === module || grant.permissionModule === "*") &&
