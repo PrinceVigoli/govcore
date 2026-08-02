@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClerkProvider, SignIn, SignUp, useAuth } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
+import { setAuthTokenGetter } from '@workspace/api-client-react';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Redirect, Route, Switch, Router as WouterRouter } from 'wouter';
@@ -10,6 +12,8 @@ import Landing from '@/pages/landing';
 import Dashboard from '@/pages/dashboard';
 import TenantsList from '@/pages/tenants/list';
 import TenantDetail from '@/pages/tenants/detail';
+import DepartmentsList from '@/pages/departments/list';
+import AuditLogsList from '@/pages/audit-logs/list';
 import UsersList from '@/pages/users/list';
 import UserDetail from '@/pages/users/detail';
 import RolesList from '@/pages/roles/list';
@@ -84,6 +88,8 @@ function AuthenticatedRoutes() {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/tenants" component={TenantsList} />
         <Route path="/tenants/:id" component={TenantDetail} />
+        <Route path="/departments" component={DepartmentsList} />
+        <Route path="/audit-logs" component={AuditLogsList} />
         <Route path="/users" component={UsersList} />
         <Route path="/users/:id" component={UserDetail} />
         <Route path="/roles" component={RolesList} />
@@ -127,6 +133,20 @@ function AuthenticatedRoutes() {
   );
 }
 
+function AuthTokenBridge() {
+  const { getToken, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      setAuthTokenGetter(() => getToken());
+    } else {
+      setAuthTokenGetter(null);
+    }
+  }, [isSignedIn, getToken]);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -168,6 +188,7 @@ function App() {
       >
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
+            <AuthTokenBridge />
             <Router />
             <Toaster />
           </TooltipProvider>
